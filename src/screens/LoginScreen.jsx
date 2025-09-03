@@ -2,24 +2,38 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
 
   async function handleLogin() {
     try {
       setLoading(true);
+      console.log('API_URL =>', apiUrl);
       const response = await axios.post(`${apiUrl}/auth/login`, { email, password });
       if (response?.data?.token) {
+        const role = response?.data?.user?.role || 'student';
+        login(response.data.token, response.data.user);
         Alert.alert('Sucesso', 'Login realizado com sucesso');
-        navigation.replace('Home');
+        if (role === 'professor') {
+          navigation.replace('ProfessorHome');
+        } else {
+          navigation.replace('Home');
+        }
       }
     } catch (error) {
-      const message = error?.response?.data?.message || 'Erro ao realizar login';
+      console.log('Login error =>', JSON.stringify({
+        message: error?.response?.data?.message,
+        status: error?.response?.status,
+        urlTried: `${apiUrl}/auth/login`,
+      }));
+      const message = error?.response?.data?.message || error?.message || 'Erro ao realizar login';
       Alert.alert('Erro', message);
     } finally {
       setLoading(false);
@@ -28,7 +42,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../../assets/TRILHAS.png')} style={styles.logo} resizeMode="contain" />
       <TextInput
         placeholder="Email"
         value={email}

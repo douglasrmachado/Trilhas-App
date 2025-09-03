@@ -2,11 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
-export default function HomeScreen({ navigation }) {
+export default function ProfessorHomeScreen({ navigation }) {
   const { logout } = useAuth();
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Bem-vindo!</Text>
+      <Text style={styles.title}>Área do Professor</Text>
+      <Text>Bem-vindo! Aqui você poderá gerenciar turmas e alunos.</Text>
+      <View style={{ height: 16 }} />
+      <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate('CreateProfessor')}>
+        <Text style={styles.primaryText}>Criar Professor</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.logoutBtn} onPress={() => { logout(); navigation.replace('Login'); }}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
@@ -20,12 +25,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
+    padding: 24,
   },
-  text: {
-    fontSize: 18,
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    backgroundColor: '#1e90ff',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  primaryText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   logoutBtn: {
-    marginTop: 16,
+    marginTop: 12,
     backgroundColor: '#ff4d4f',
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -34,7 +52,7 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#fff',
     fontWeight: 'bold',
-  }
+  },
 });
 
 
