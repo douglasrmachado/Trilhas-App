@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -10,6 +11,14 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
+
+  const themed = useMemo(() => ({
+    background: colors.background,
+    text: colors.text,
+    inputBorder: colors.text + '33',
+    buttonBg: colors.primary,
+  }), [colors]);
 
   const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
 
@@ -36,13 +45,13 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <TextInput placeholder="Nome" value={name} onChangeText={setName} style={styles.input} />
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={styles.input} />
-      <TextInput placeholder="N° de matrícula" value={registryId} onChangeText={setRegistryId} autoCapitalize="none" keyboardType="numeric" style={styles.input} />
-      <TextInput placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
-      <TextInput placeholder="Confirmar senha" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry style={styles.input} />
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+    <View style={[styles.container, { backgroundColor: themed.background }]}>
+      <TextInput placeholder="Nome" value={name} onChangeText={setName} placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TextInput placeholder="N° de matrícula" value={registryId} onChangeText={setRegistryId} autoCapitalize="none" keyboardType="numeric" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TextInput placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TextInput placeholder="Confirmar senha" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TouchableOpacity style={[styles.button, { backgroundColor: themed.buttonBg }]} onPress={handleRegister} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Enviando...' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </View>

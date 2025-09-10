@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
+
+  const themed = useMemo(() => ({
+    background: colors.background,
+    text: colors.text,
+    inputBorder: colors.text + '33',
+    buttonBg: colors.primary,
+  }), [colors]);
 
   const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
 
@@ -24,10 +33,10 @@ export default function ForgotPasswordScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.info}>Informe seu email para recuperar a senha</Text>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={styles.input} />
-      <TouchableOpacity style={styles.button} onPress={handleForgot} disabled={loading}>
+    <View style={[styles.container, { backgroundColor: themed.background }]}>
+      <Text style={[styles.info, { color: themed.text }]}>Informe seu email para recuperar a senha</Text>
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+      <TouchableOpacity style={[styles.button, { backgroundColor: themed.buttonBg }]} onPress={handleForgot} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Enviando...' : 'Enviar'}</Text>
       </TouchableOpacity>
     </View>

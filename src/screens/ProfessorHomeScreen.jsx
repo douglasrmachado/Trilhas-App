@@ -7,7 +7,7 @@ export default function ProfessorHomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Área do Professor</Text>
-      <Text>Bem-vindo! Aqui você poderá gerenciar turmas e alunos.</Text>
+      <Text style={styles.text}>Bem-vindo! Aqui você poderá gerenciar turmas e alunos.</Text>
       <View style={{ height: 16 }} />
       <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate('CreateProfessor')}>
         <Text style={styles.primaryText}>Criar Professor</Text>
@@ -28,9 +28,15 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  text: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
   },
   primaryBtn: {
     backgroundColor: '#1e90ff',

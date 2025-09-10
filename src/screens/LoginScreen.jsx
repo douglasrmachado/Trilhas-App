@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { colors } = useTheme();
+
+  const themed = useMemo(() => ({
+    background: colors.background,
+    text: colors.text,
+    inputBorder: colors.text + '33',
+    buttonBg: colors.primary,
+    link: '#1e90ff',
+  }), [colors]);
 
   const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
 
   async function handleLogin() {
     try {
+      if (!email || !password) {
+        Alert.alert('Atenção', 'Preencha todos os campos');
+        return;
+      }
       setLoading(true);
       console.log('API_URL =>', apiUrl);
       const response = await axios.post(`${apiUrl}/auth/login`, { email, password });
@@ -28,20 +42,21 @@ export default function LoginScreen({ navigation }) {
         }
       }
     } catch (error) {
-      console.log('Login error =>', JSON.stringify({
-        message: error?.response?.data?.message,
-        status: error?.response?.status,
-        urlTried: `${apiUrl}/auth/login`,
-      }));
-      const message = error?.response?.data?.message || error?.message || 'Erro ao realizar login';
-      Alert.alert('Erro', message);
+      const status = error?.response?.status;
+      if (status === 401) {
+        Alert.alert('Erro', 'Credenciais inválidas');
+      } else if (status === 400) {
+        Alert.alert('Erro', 'Preencha todos os campos');
+      } else {
+        Alert.alert('Erro', 'Erro ao realizar login');
+      }
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themed.background }]}>
       <Image source={require('../../assets/TRILHAS.png')} style={styles.logo} resizeMode="contain" />
       <TextInput
         placeholder="Email"
@@ -49,24 +64,26 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        style={styles.input}
+        placeholderTextColor={themed.text + '88'}
+        style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]}
       />
       <TextInput
         placeholder="Senha"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={styles.input}
+        placeholderTextColor={themed.text + '88'}
+        style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]}
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: themed.buttonBg }]} onPress={handleLogin} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
       </TouchableOpacity>
       <View style={styles.linksRow}>
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.linkText}>Cadastrar</Text>
+          <Text style={[styles.linkText, { color: themed.link }]}>Cadastrar</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Forgot')}>
-          <Text style={styles.linkText}>Recuperar senha</Text>
+          <Text style={[styles.linkText, { color: themed.link }]}>Recuperar senha</Text>
         </TouchableOpacity>
       </View>
     </View>
