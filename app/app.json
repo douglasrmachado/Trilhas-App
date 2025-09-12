@@ -20,13 +20,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.douglasrmachado.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "API_URL": "http://10.20.16.133:3000"
+      "API_URL": "http://10.20.8.144:3000"
     }
   }
 }

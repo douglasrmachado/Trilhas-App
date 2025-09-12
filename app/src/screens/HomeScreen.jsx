@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -14,25 +15,31 @@ export default function HomeScreen({ navigation }) {
   }), [colors]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-      <Text style={[styles.text, { color: theme.textColor }]}>Bem-vindo!</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <View style={styles.content}>
+        <Text style={[styles.text, { color: theme.textColor }]}>Bem-vindo!</Text>
 
-      <TouchableOpacity
-        style={[styles.logoutBtn, { backgroundColor: theme.buttonBg }]}
-        onPress={() => { logout(); navigation.replace('Login'); }}
-      >
-        <Text style={styles.logoutText}>Sair</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[styles.logoutBtn, { backgroundColor: theme.buttonBg }]}
+          onPress={() => { logout(); navigation.replace('Login'); }}
+        >
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    paddingHorizontal: 24,
   },
   text: {
     fontSize: 18,
