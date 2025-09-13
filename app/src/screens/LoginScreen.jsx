@@ -76,11 +76,8 @@ export default function LoginScreen({ navigation }) {
         setRegistryId('');
         setConfirmPassword('');
         
-        if (role === 'professor') {
-          navigation.replace('ProfessorHome');
-        } else {
-          navigation.replace('Home');
-        }
+        // A navegação agora é automática baseada no estado de autenticação
+        // Não é mais necessário navegar manualmente
       }
     } catch (error) {
       const status = error?.response?.status;
@@ -146,29 +143,6 @@ export default function LoginScreen({ navigation }) {
     }
   }
 
-  async function handleForgot() {
-    try {
-      if (!email) {
-        Alert.alert('Atenção', 'Informe seu email');
-        return;
-      }
-
-      setLoading(true);
-      console.log('API_URL =>', apiUrl);
-      await axios.post(`${apiUrl}/auth/forgot`, { email });
-      Alert.alert('Sucesso', 'Email de recuperação enviado!');
-    } catch (error) {
-      const status = error?.response?.status;
-      if (status === 404) {
-        Alert.alert('Erro', 'Email não encontrado');
-      } else {
-        Alert.alert('Erro', 'Erro ao enviar email de recuperação');
-      }
-      console.error('Erro ao recuperar senha:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]}>
@@ -220,12 +194,6 @@ export default function LoginScreen({ navigation }) {
               >
                 <Text style={activeTab === 'register' ? [styles.activeTabText, { color: themed.text }] : [styles.inactiveTabText, { color: themed.text + '66' }]}>Cadastrar</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tab, activeTab === 'forgot' ? [styles.activeTab, { backgroundColor: isDarkMode ? '#1e293b' : '#fff' }] : styles.inactiveTab]} 
-                onPress={() => setActiveTab('forgot')}
-              >
-                <Text style={activeTab === 'forgot' ? [styles.activeTabText, { color: themed.text }] : [styles.inactiveTabText, { color: themed.text + '66' }]}>Recuperar Senha</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Form Content */}
@@ -258,6 +226,16 @@ export default function LoginScreen({ navigation }) {
                       style={[styles.input, { borderColor: themed.inputBorder, color: themed.text, backgroundColor: isDarkMode ? '#334155' : '#fff' }]}
                     />
                   </View>
+
+                  {/* Forgot Password Link */}
+                  <TouchableOpacity 
+                    style={styles.forgotPasswordLink}
+                    onPress={() => navigation.navigate('Contact')}
+                  >
+                    <Text style={[styles.forgotPasswordText, { color: themed.text + '88' }]}>
+                      Esqueceu a senha?
+                    </Text>
+                  </TouchableOpacity>
 
                   <TouchableOpacity 
                     style={[styles.loginButton, { backgroundColor: '#1e90ff' }]} 
@@ -344,33 +322,6 @@ export default function LoginScreen({ navigation }) {
                 </>
               )}
 
-              {activeTab === 'forgot' && (
-                <>
-                  <Text style={[styles.formTitle, { color: themed.text }]}>Recuperar senha</Text>
-                  <Text style={[styles.formSubtitle, { color: themed.text + '88' }]}>Informe seu email para recuperar a senha</Text>
-                  
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: themed.text }]}>Email</Text>
-                    <TextInput
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChangeText={setEmail}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      placeholderTextColor={themed.text + '66'}
-                      style={[styles.input, { borderColor: themed.inputBorder, color: themed.text, backgroundColor: isDarkMode ? '#334155' : '#fff' }]}
-                    />
-                  </View>
-
-                  <TouchableOpacity 
-                    style={[styles.loginButton, { backgroundColor: '#1e90ff' }]} 
-                    onPress={handleForgot} 
-                    disabled={loading}
-                  >
-                    <Text style={styles.loginButtonText}>{loading ? 'Enviando...' : 'Enviar'}</Text>
-                  </TouchableOpacity>
-                </>
-              )}
             </View>
           </View>
         </ScrollView>
@@ -538,6 +489,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginBottom: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
 

@@ -12,17 +12,5 @@ CREATE TABLE IF NOT EXISTS users (
   PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS password_reset_codes (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id INT UNSIGNED NOT NULL,
-  code VARCHAR(6) NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  used BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_code (code),
-  INDEX idx_expires (expires_at)
-);
 
 

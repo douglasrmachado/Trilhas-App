@@ -4,7 +4,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../db';
 import express from 'express';
-import { sendPasswordResetCode } from '../services/emailService';
 
 const router = Router();
 
@@ -95,99 +94,6 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// Endpoint para solicitar recuperação de senha
-router.post('/forgot', async (req, res, next) => {
-  try {
-    console.log('📧 Solicitação de recuperação de senha:', { email: req.body?.email });
-    
-    const data = resetPasswordSchema.parse(req.body);
-    console.log('✅ Email validado:', data.email);
-    
-    // Verificar se o email existe
-    const [rows] = await pool.query('SELECT id, name FROM users WHERE email = ?', [data.email]);
-    const users = Array.isArray(rows) ? rows : [];
-    console.log('👥 Usuários encontrados:', users.length);
-    
-    if (!users[0]) {
-      console.log('❌ Email não encontrado - retornando sucesso por segurança');
-      // Por segurança, sempre retorna sucesso mesmo se email não existir
-      return res.json({ message: 'Se o email existir, enviaremos um código de recuperação' });
-    }
-    
-    const user = users[0] as any;
-    console.log('👤 Usuário encontrado:', { id: user.id, name: user.name });
-    
-    // Gerar código de 6 dígitos
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('🔢 Código gerado:', code);
-    
-    // Definir expiração (15 minutos)
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-    console.log('⏰ Expira em:', expiresAt.toISOString());
-    
-    // Invalidar códigos anteriores do usuário
-    await pool.query('UPDATE password_reset_codes SET used = TRUE WHERE user_id = ?', [user.id]);
-    console.log('🗑️ Códigos anteriores invalidados');
-    
-    // Inserir novo código
-    await pool.query(
-      'INSERT INTO password_reset_codes (user_id, code, expires_at) VALUES (?, ?, ?)',
-      [user.id, code, expiresAt]
-    );
-    console.log('💾 Código salvo no banco');
-    
-    // Enviar email
-    console.log('📤 Enviando email...');
-    const emailSent = await sendPasswordResetCode(data.email, code, user.name);
-    console.log('📧 Resultado do envio:', emailSent ? '✅ Sucesso' : '❌ Falhou');
-    
-    if (emailSent) {
-      return res.json({ message: 'Código de recuperação enviado para seu email' });
-    } else {
-      return res.status(500).json({ message: 'Erro ao enviar email. Tente novamente.' });
-    }
-  } catch (err) {
-    console.error('💥 Erro na recuperação de senha:', err);
-    next(err);
-  }
-});
-
-// Endpoint para verificar código e redefinir senha
-router.post('/reset-password', async (req, res, next) => {
-  try {
-    const data = verifyCodeSchema.parse(req.body);
-    
-    // Verificar se o código existe e é válido
-    const [rows] = await pool.query(`
-      SELECT prc.id, prc.user_id, u.name 
-      FROM password_reset_codes prc 
-      JOIN users u ON prc.user_id = u.id 
-      WHERE u.email = ? AND prc.code = ? AND prc.used = FALSE AND prc.expires_at > NOW()
-    `, [data.email, data.code]);
-    
-    const codes = Array.isArray(rows) ? rows : [];
-    
-    if (!codes[0]) {
-      return res.status(400).json({ message: 'Código inválido ou expirado' });
-    }
-    
-    const codeData = codes[0] as any;
-    
-    // Hash da nova senha
-    const passwordHash = await bcrypt.hash(data.newPassword, 10);
-    
-    // Atualizar senha do usuário
-    await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, codeData.user_id]);
-    
-    // Marcar código como usado
-    await pool.query('UPDATE password_reset_codes SET used = TRUE WHERE id = ?', [codeData.id]);
-    
-    return res.json({ message: 'Senha redefinida com sucesso' });
-  } catch (err) {
-    next(err);
-  }
-});
 
 // Middleware para autenticação e checagem de role
 function requireAuthProfessor(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -214,15 +120,6 @@ const createProfessorSchema = z.object({
   password: z.string().min(6),
 });
 
-const resetPasswordSchema = z.object({
-  email: z.string().email(),
-});
-
-const verifyCodeSchema = z.object({
-  email: z.string().email(),
-  code: z.string().length(6),
-  newPassword: z.string().min(6),
-});
 
 router.post('/professors', requireAuthProfessor, async (req, res, next) => {
   try {

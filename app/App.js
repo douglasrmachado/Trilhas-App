@@ -4,36 +4,56 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfessorHomeScreen from './src/screens/ProfessorHomeScreen';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import CreateProfessorScreen from './src/screens/CreateProfessorScreen';
+import ContactScreen from './src/screens/ContactScreen';
+import TrailDetailScreen from './src/screens/TrailDetailScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { Text, View } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { colors } = useTheme();
+  
+  // Se não há usuário logado, mostra apenas as telas de autenticação
+  if (!user || !token) {
+    return (
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTitleStyle: { color: colors.headerText },
+          headerTintColor: colors.headerText,
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    );
+  }
+  
+  // Se há usuário logado, mostra as telas autenticadas
   return (
     <Stack.Navigator
-      initialRouteName="Login"
+      initialRouteName="Home"
       screenOptions={{
         headerStyle: { backgroundColor: colors.headerBg },
         headerTitleStyle: { color: colors.headerText },
         headerTintColor: colors.headerText,
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Forgot" component={ForgotPasswordScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ProfessorHome" component={ProfessorHomeScreen} options={{ title: 'Professor' }} />
       <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ title: 'Criar Professor' }} />
+      <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TrailDetail" component={TrailDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
