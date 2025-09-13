@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -17,8 +17,17 @@ import { Text, View } from 'react-native';
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
-  const { user, token } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const { colors } = useTheme();
+  
+  // Mostrar loading enquanto carrega dados persistidos
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.backgroundColor }}>
+        <Text style={{ color: colors.textColor }}>Carregando...</Text>
+      </View>
+    );
+  }
   
   // Se não há usuário logado, mostra apenas as telas de autenticação
   if (!user || !token) {
@@ -39,21 +48,36 @@ function RootNavigator() {
   }
   
   // Se há usuário logado, mostra as telas autenticadas
+  // Determina a tela inicial baseada no role do usuário
+  console.log('🔍 Debug navegação:', { user, role: user?.role });
+  const initialRoute = user?.role === 'professor' ? 'ProfessorHome' : 'Home';
+  console.log('🎯 Rota inicial determinada:', initialRoute);
+  
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName={initialRoute}
       screenOptions={{
         headerStyle: { backgroundColor: colors.headerBg },
         headerTitleStyle: { color: colors.headerText },
         headerTintColor: colors.headerText,
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ProfessorHome" component={ProfessorHomeScreen} options={{ title: 'Professor' }} />
-      <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ title: 'Criar Professor' }} />
-      <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="TrailDetail" component={TrailDetailScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
+      {/* Renderizar apenas a tela correta baseada no role */}
+      {user?.role === 'professor' ? (
+        <>
+          <Stack.Screen name="ProfessorHome" component={ProfessorHomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ title: 'Criar Professor' }} />
+          <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="TrailDetail" component={TrailDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
@@ -80,14 +104,11 @@ export default function App() {
 
 function NavigationRoot() {
   const { isDarkMode } = useTheme();
-  const insets = useSafeAreaInsets();
   
   return (
-    <View style={{ flex: 1, paddingTop: insets.top }}>
-      <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
-        <StatusBar style={isDarkMode ? "light" : "dark"} />
-        <RootNavigator />
-      </NavigationContainer>
-    </View>
+    <NavigationContainer theme={isDarkMode ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
+      <RootNavigator />
+    </NavigationContainer>
   );
 }

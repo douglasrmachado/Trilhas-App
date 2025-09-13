@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
@@ -64,8 +64,11 @@ export default function LoginScreen({ navigation }) {
       setLoading(true);
       console.log('API_URL =>', apiUrl);
       const response = await axios.post(`${apiUrl}/auth/login`, { email, password });
+      console.log('📡 Resposta da API:', response.data);
       if (response?.data?.token) {
         const role = response?.data?.user?.role || 'student';
+        console.log('👤 Dados do usuário recebidos:', response.data.user);
+        console.log('🎭 Role detectado:', role);
         login(response.data.token, response.data.user);
         Alert.alert('Sucesso', 'Login realizado com sucesso');
         
@@ -145,7 +148,11 @@ export default function LoginScreen({ navigation }) {
 
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]} edges={['left', 'right', 'bottom']}>
+      <StatusBar 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+        backgroundColor={themed.background}
+      />
       <TouchableOpacity
         style={[styles.themeButton, { backgroundColor: isDarkMode ? themed.text + '20' : 'rgba(0,0,0,0.05)' }]}
         onPress={() => {
