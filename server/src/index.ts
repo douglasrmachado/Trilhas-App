@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { json } from 'express';
 import authRouter from './routes/auth';
+import submissionsRouter from './routes/submissions';
 import { errorHandler } from './utils/errorHandler';
 import { config, validateConfig } from './config';
 import { bootstrapDatabase } from './utils/bootstrap';
@@ -32,6 +33,7 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/submissions', submissionsRouter);
 
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler);

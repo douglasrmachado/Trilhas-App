@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,20 +7,23 @@ import {
   ScrollView, 
   TextInput,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getApiUrl } from '../config/api';
 
 export default function ProfessorHomeScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const { colors, isDarkMode, toggle } = useTheme();
   
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [selectedFilter1, setSelectedFilter1] = useState('Todos');
   const [selectedFilter2, setSelectedFilter2] = useState('Todas');
   const [selectedFilter3, setSelectedFilter3] = useState('Todos');
-  const [feedbackText, setFeedbackText] = useState('');
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(true);
 
   const theme = useMemo(() => ({
     backgroundColor: colors.background,
@@ -31,63 +34,42 @@ export default function ProfessorHomeScreen({ navigation }) {
     lightBlue: '#e6f3ff',
     darkBlue: '#0066cc',
     lightGreen: '#4CAF50',
+    warningOrange: '#f59e0b',
   }), [colors, isDarkMode]);
 
-  const pendingContent = [
-    {
-      id: 1,
-      title: 'Resumo: Funções Quadráticas',
-      author: 'João Silva',
-      date: '2024-05-27',
-      year: '1º Ano',
-      subject: 'Matemática',
-      description: 'Resumo completo sobre funções quadráticas, incluindo definição, características do gráfico, vértice da parábola e exemplos de aplicação prática.'
-    },
-    {
-      id: 2,
-      title: 'Exercícios: Cálculo Diferencial',
-      author: 'Maria Santos',
-      date: '2024-05-26',
-      year: '2º Ano',
-      subject: 'Matemática',
-      description: 'Conjunto de exercícios resolvidos sobre derivadas e suas aplicações em problemas práticos.'
-    },
-    {
-      id: 3,
-      title: 'Apresentação: Estruturas de Dados',
-      author: 'Pedro Costa',
-      date: '2024-05-25',
-      year: '3º Ano',
-      subject: 'Programação',
-      description: 'Apresentação sobre listas, pilhas e filas com exemplos de implementação em Python.'
-    },
-    {
-      id: 4,
-      title: 'Relatório: Banco de Dados',
-      author: 'Ana Lima',
-      date: '2024-05-24',
-      year: '2º Ano',
-      subject: 'Banco de Dados',
-      description: 'Relatório sobre normalização de banco de dados com estudo de caso prático.'
-    }
-  ];
+  useEffect(() => {
+    loadPendingSubmissions();
+  }, []);
 
-  const handleApprove = (contentId) => {
-    alert(`Conteúdo ${contentId} aprovado!`);
-  };
+  const loadPendingSubmissions = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      console.log('⏳ Carregando submissões pendentes...');
 
-  const handleReject = (contentId) => {
-    alert(`Conteúdo ${contentId} rejeitado!`);
-  };
+      const response = await fetch(`${apiUrl}/submissions/pending`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-  const handleSendFeedback = (contentId) => {
-    if (feedbackText.trim()) {
-      alert(`Feedback enviado para conteúdo ${contentId}!`);
-      setFeedbackText('');
-    } else {
-      alert('Digite um feedback antes de enviar.');
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Submissões pendentes carregadas:', result.data.length);
+        setPendingSubmissions(result.data);
+      } else {
+        throw new Error(result.message || 'Erro ao carregar submissões pendentes');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar submissões pendentes:', error);
+      Alert.alert('Erro', 'Erro ao carregar submissões pendentes');
+    } finally {
+      setLoadingSubmissions(false);
     }
   };
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -225,97 +207,81 @@ export default function ProfessorHomeScreen({ navigation }) {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>📄</Text>
             <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
-              Conteúdos Pendentes ({pendingContent.length})
+              Conteúdos Pendentes ({pendingSubmissions.length})
             </Text>
+            <TouchableOpacity
+              style={[styles.reviewButton, { backgroundColor: theme.primaryBlue }]}
+              onPress={() => navigation.navigate('ReviewedSubmissions')}
+            >
+              <Text style={styles.reviewButtonText}>Submissões Revisadas</Text>
+            </TouchableOpacity>
           </View>
 
-          {pendingContent.map((content) => (
-            <View key={content.id} style={[styles.contentCard, { backgroundColor: theme.cardBg }]}>
+          {loadingSubmissions ? (
+            <View style={styles.loadingContainer}>
+              <Text style={[styles.loadingText, { color: theme.textColor }]}>
+                Carregando submissões pendentes...
+              </Text>
+            </View>
+          ) : pendingSubmissions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>📭</Text>
+              <Text style={[styles.emptyTitle, { color: theme.textColor }]}>
+                Nenhuma submissão pendente
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textColor + '88' }]}>
+                Não há conteúdos aguardando revisão
+              </Text>
+            </View>
+          ) : (
+            pendingSubmissions.map((submission) => (
+            <TouchableOpacity 
+              key={submission.id} 
+              style={[styles.contentCard, { backgroundColor: theme.cardBg }]}
+              onPress={() => navigation.navigate('SubmissionDetail', { submission })}
+            >
               {/* Content Header */}
               <View style={styles.contentHeader}>
-                <Text style={styles.contentIcon}>📄</Text>
+                <Text style={styles.contentIcon}>
+                  {submission.content_type === 'resumo' ? '📄' : 
+                   submission.content_type === 'mapa' ? '🗺️' : 
+                   submission.content_type === 'exercicio' ? '📝' : '📊'}
+                </Text>
                 <View style={styles.contentInfo}>
-                  <Text style={[styles.contentTitle, { color: theme.textColor }]}>{content.title}</Text>
+                  <Text style={[styles.contentTitle, { color: theme.textColor }]}>{submission.title}</Text>
                   <View style={styles.contentMeta}>
-                    <Text style={[styles.contentAuthor, { color: theme.textColor }]}>Por: {content.author}</Text>
+                    <Text style={[styles.contentAuthor, { color: theme.textColor }]}>Por: {submission.user_name || 'Estudante'}</Text>
                     <Text style={styles.contentDot}>•</Text>
                     <Text style={styles.contentDateIcon}>📅</Text>
-                    <Text style={[styles.contentDate, { color: theme.textColor }]}>{content.date}</Text>
+                    <Text style={[styles.contentDate, { color: theme.textColor }]}>{new Date(submission.created_at).toLocaleDateString('pt-BR')}</Text>
                   </View>
                   <View style={styles.tagsContainer}>
                     <View style={[styles.tag, { backgroundColor: theme.primaryBlue + '20' }]}>
                       <Text style={styles.tagIcon}>🎓</Text>
-                      <Text style={[styles.tagText, { color: theme.primaryBlue }]}>{content.year}</Text>
+                      <Text style={[styles.tagText, { color: theme.primaryBlue }]}>{submission.year}</Text>
                     </View>
                     <View style={[styles.tag, { backgroundColor: theme.primaryBlue + '20' }]}>
                       <Text style={styles.tagIcon}>📚</Text>
-                      <Text style={[styles.tagText, { color: theme.primaryBlue }]}>{content.subject}</Text>
+                      <Text style={[styles.tagText, { color: theme.primaryBlue }]}>{submission.subject}</Text>
                     </View>
                   </View>
                 </View>
               </View>
 
               {/* Content Description */}
-              <Text style={[styles.contentDescription, { color: theme.textColor }]}>
-                {content.description}
+              <Text style={[styles.contentDescription, { color: theme.textColor + 'CC' }]}>
+                {submission.description}
               </Text>
 
-              {/* Summary Button */}
-              <TouchableOpacity style={[styles.summaryButton, { backgroundColor: theme.primaryBlue }]}>
-                <Text style={styles.summaryIcon}>📄</Text>
-                <Text style={styles.summaryText}>Resumo</Text>
-              </TouchableOpacity>
-
-              {/* Feedback Area */}
-              <View style={styles.feedbackSection}>
-                <View style={styles.feedbackHeader}>
-                  <Text style={styles.feedbackIcon}>✨</Text>
-                  <Text style={[styles.feedbackLabel, { color: theme.textColor }]}>Feedback</Text>
+              {/* Status Badge */}
+              <View style={styles.statusContainer}>
+                <View style={[styles.statusBadge, { backgroundColor: theme.warningOrange + '20' }]}>
+                  <Text style={[styles.statusText, { color: theme.warningOrange }]}>⏳ Pendente</Text>
                 </View>
-                <TextInput
-                  style={[styles.feedbackInput, { 
-                    backgroundColor: theme.backgroundColor,
-                    borderColor: theme.textColor + '20',
-                    color: theme.textColor
-                  }]}
-                  placeholder="Digite seu feedback sobre o conteúdo submetido pelo aluno..."
-                  placeholderTextColor={theme.textColor + '60'}
-                  value={feedbackText}
-                  onChangeText={setFeedbackText}
-                  multiline
-                  numberOfLines={3}
-                />
               </View>
-
-              {/* Action Buttons */}
-              <View style={styles.actionButtons}>
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.approveButton]}
-                  onPress={() => handleApprove(content.id)}
-                >
-                  <Text style={styles.actionIcon}>✓</Text>
-                  <Text style={styles.actionText}>Aprovar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.feedbackButton, { borderColor: theme.textColor + '40' }]}
-                  onPress={() => handleSendFeedback(content.id)}
-                >
-                  <Text style={styles.actionIcon}>💬</Text>
-                  <Text style={styles.actionIcon}>📤</Text>
-                  <Text style={[styles.actionText, { color: theme.textColor }]}>Enviar Feedback</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.rejectButton]}
-                  onPress={() => handleReject(content.id)}
-                >
-                  <Text style={styles.actionIcon}>✗</Text>
-                  <Text style={styles.actionText}>Reprovar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+            </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -465,6 +431,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 15,
   },
   sectionIcon: {
@@ -474,6 +441,57 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    flex: 1,
+  },
+  reviewButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  statusContainer: {
+    alignItems: 'flex-end',
+    marginTop: 12,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   filtersContainer: {
     gap: 10,

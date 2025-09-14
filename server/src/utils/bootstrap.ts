@@ -12,6 +12,9 @@ export async function bootstrapDatabase() {
     // Verificar se a coluna 'role' existe
     await ensureRoleColumn();
     
+    // Criar tabela de submissões
+    await ensureSubmissionsTable();
+    
     // Criar usuário admin inicial
     await seedInitialAdmin();
     
@@ -46,6 +49,54 @@ async function ensureRoleColumn() {
     }
   } catch (err) {
     console.error('❌ Erro ao verificar coluna role:', err);
+    throw err;
+  }
+}
+
+/**
+ * Garante que a tabela de submissões existe
+ */
+async function ensureSubmissionsTable() {
+  try {
+    const [tableRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM INFORMATION_SCHEMA.TABLES
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'submissions'`
+    );
+    
+    const tableCount = Array.isArray(tableRows) && tableRows[0] && (tableRows[0] as any).cnt 
+      ? Number((tableRows[0] as any).cnt) 
+      : 0;
+    
+    if (tableCount === 0) {
+      await pool.query(`
+        CREATE TABLE submissions (
+          id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          user_id INT UNSIGNED NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          subject VARCHAR(100) NOT NULL,
+          year VARCHAR(50) NOT NULL,
+          content_type ENUM('resumo', 'mapa', 'exercicio', 'apresentacao') NOT NULL DEFAULT 'resumo',
+          description TEXT NOT NULL,
+          keywords TEXT,
+          file_path VARCHAR(500),
+          file_name VARCHAR(255),
+          file_size INT,
+          status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_user_id (user_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at)
+        )
+      `);
+      console.log("✅ Tabela 'submissions' criada com sucesso");
+    } else {
+      console.log("✅ Tabela 'submissions' já existe");
+    }
+  } catch (err) {
+    console.error('❌ Erro ao verificar/criar tabela submissions:', err);
     throw err;
   }
 }

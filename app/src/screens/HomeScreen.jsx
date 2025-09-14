@@ -283,12 +283,18 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.menuButtonText, { color: theme.textColor }]}>Informações sobre o campus</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={[styles.menuButton, { backgroundColor: theme.cardBg }]}>
+              <TouchableOpacity 
+                style={[styles.menuButton, { backgroundColor: theme.cardBg }]}
+                onPress={() => navigation.navigate('MySubmissions')}
+              >
                 <Text style={styles.menuButtonIcon}>📋</Text>
                 <Text style={[styles.menuButtonText, { color: theme.textColor }]}>Minhas Submissões</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={[styles.menuButton, { backgroundColor: theme.primaryBlue }]}>
+              <TouchableOpacity 
+                style={[styles.menuButton, { backgroundColor: theme.primaryBlue }]}
+                onPress={() => navigation.navigate('SubmitContent')}
+              >
                 <Text style={styles.menuButtonIcon}>➕</Text>
                 <Text style={styles.menuButtonTextWhite}>Submeter Conteúdo</Text>
               </TouchableOpacity>
