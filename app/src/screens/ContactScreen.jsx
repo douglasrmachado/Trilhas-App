@@ -13,7 +13,7 @@ export default function ContactScreen({ navigation }) {
   }), [colors]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity
           style={[styles.backButton, { backgroundColor: isDarkMode ? '#1e293b' : '#fff' }]}

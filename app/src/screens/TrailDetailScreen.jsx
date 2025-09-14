@@ -78,7 +78,7 @@ export default function TrailDetailScreen({ route, navigation }) {
   const totalXP = modules.reduce((sum, module) => sum + (module.completed ? module.xp : 0), 0);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={theme.backgroundColor}

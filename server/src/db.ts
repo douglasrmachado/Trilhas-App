@@ -1,12 +1,22 @@
 import { createPool } from 'mysql2/promise';
+import { config } from './config';
 
 const pool = createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'Drm321512!',
-  database: process.env.DB_DATABASE || 'trilhas',
-  connectionLimit: 20
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.database,
+  connectionLimit: config.database.connectionLimit,
+});
+
+// Event listeners para monitoramento da conexão
+pool.on('connection', (connection) => {
+  console.log('🔗 Nova conexão estabelecida com o banco de dados');
+});
+
+pool.on('enqueue', () => {
+  console.log('⏳ Aguardando conexão disponível no pool');
 });
 
 export default pool;

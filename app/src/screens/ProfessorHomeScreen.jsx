@@ -90,7 +90,7 @@ export default function ProfessorHomeScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar 
         barStyle={isDarkMode ? "light-content" : "dark-content"} 
         backgroundColor={theme.backgroundColor}

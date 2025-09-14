@@ -148,7 +148,7 @@ export default function LoginScreen({ navigation }) {
 
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar 
         barStyle={isDarkMode ? "light-content" : "dark-content"} 
         backgroundColor={themed.background}
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   themeButton: {
     position: 'absolute',
-    top: 50,
+    top: 60,
     right: 20,
     padding: 12,
     borderRadius: 25,
