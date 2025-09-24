@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
-import { requireProfessor } from '../middleware/auth';
+import { requireProfessor, requireAuth } from '../middleware/auth';
 import { registerSchema, loginSchema, createProfessorSchema } from '../validators/authValidators';
 import { asyncHandler } from '../utils/errorHandler';
 
@@ -64,6 +64,59 @@ router.post('/professors', requireProfessor, asyncHandler(async (req: Request, r
   res.status(201).json({ 
     success: true,
     message: 'Professor criado com sucesso' 
+  });
+}));
+
+/**
+ * @route   PUT /auth/profile-photo
+ * @desc    Atualiza a foto de perfil do usuário autenticado
+ * @access  Private
+ */
+router.put('/profile-photo', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { photoUri } = req.body;
+  const userId = req.user?.id;
+  
+  if (!photoUri) {
+    return res.status(400).json({
+      success: false,
+      message: 'URL da foto é obrigatória'
+    });
+  }
+  
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Usuário não autenticado'
+    });
+  }
+  
+  console.log('📸 Atualizando foto de perfil:', { userId, photoUri });
+  
+  await authService.updateProfilePhoto(userId, photoUri);
+  
+  console.log('✅ Foto de perfil atualizada com sucesso');
+  res.json({
+    success: true,
+    message: 'Foto de perfil atualizada com sucesso'
+  });
+}));
+
+router.put('/profile', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { bio, cover_photo } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Usuário não autenticado'
+    });
+  }
+
+  await authService.updateProfile(userId, { bio, cover_photo });
+  
+  res.json({
+    success: true,
+    message: 'Perfil atualizado com sucesso'
   });
 }));
 

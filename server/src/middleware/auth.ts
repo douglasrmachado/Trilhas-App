@@ -28,7 +28,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const authService = new AuthService();
     const payload = authService.verifyToken(token);
     
-    req.user = payload;
+    // Adicionar id ao payload para compatibilidade
+    req.user = { ...payload, id: payload.sub };
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Token inválido' });

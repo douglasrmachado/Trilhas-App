@@ -9,6 +9,7 @@ import {
   Alert,
   StatusBar,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -18,7 +19,7 @@ import * as DocumentPicker from 'expo-document-picker';
 
 export default function SubmitContentScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
   
   // Estados do formulário
@@ -292,8 +293,16 @@ export default function SubmitContentScreen({ navigation }) {
         </View>
         
         <View style={styles.headerRight}>
-          <Text style={styles.userIcon}>👤</Text>
-          <Text style={[styles.userName, { color: theme.headerText }]}>João Silva</Text>
+          {user?.profile_photo ? (
+            <Image
+              source={{ uri: user.profile_photo }}
+              style={styles.userProfileImage}
+            />
+          ) : (
+            <View style={styles.userIconContainer}>
+              <Text style={styles.userIcon}>👤</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -546,9 +555,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  userIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1e90ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   userIcon: {
     fontSize: 16,
-    marginRight: 6,
+    color: '#fff',
+  },
+  userProfileImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   userName: {
     fontSize: 14,

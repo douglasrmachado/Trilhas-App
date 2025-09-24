@@ -66,7 +66,7 @@ export class AuthService {
     
     // Buscar usuário por email
     const [rows] = await pool.query(
-      'SELECT id, name, email, role, password_hash FROM users WHERE email = ?', 
+      'SELECT id, name, email, role, profile_photo, bio, cover_photo, password_hash FROM users WHERE email = ?',
       [email]
     );
     const users = Array.isArray(rows) ? rows : [];
@@ -111,9 +111,45 @@ export class AuthService {
   }
 
   /**
+   * Atualiza a foto de perfil do usuário
+   */
+  async updateProfilePhoto(userId: number, photoUri: string): Promise<void> {
+    await pool.query(
+      'UPDATE users SET profile_photo = ? WHERE id = ?',
+      [photoUri, userId]
+    );
+  }
+
+  async updateProfile(userId: number, profileData: { bio?: string; cover_photo?: string }): Promise<void> {
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (profileData.bio !== undefined) {
+      updates.push('bio = ?');
+      values.push(profileData.bio);
+    }
+
+    if (profileData.cover_photo !== undefined) {
+      updates.push('cover_photo = ?');
+      values.push(profileData.cover_photo);
+    }
+
+    if (updates.length === 0) {
+      return;
+    }
+
+    values.push(userId);
+    
+    await pool.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+
+  /**
    * Verifica se um token JWT é válido
    */
   verifyToken(token: string): JWTPayload {
-    return jwt.verify(token, process.env.JWT_SECRET || 'dev') as JWTPayload;
+    return jwt.verify(token, process.env.JWT_SECRET || 'dev') as unknown as JWTPayload;
   }
 }

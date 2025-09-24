@@ -1,26 +1,64 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions, Image, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, updateProfilePhoto } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const theme = useMemo(() => ({
+  const selectImage = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Solicitar permissão para acessar a galeria
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de permissão para acessar sua galeria de fotos.');
+        return;
+      }
+
+      // Abrir seletor de imagem
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        await updateProfilePhoto(imageUri);
+        Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível atualizar a foto de perfil.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const theme = {
     backgroundColor: colors.background,
     textColor: colors.text,
     cardBackground: isDarkMode ? '#1e293b' : '#fff',
     primaryBlue: '#1e90ff',
-    lightBlue: '#e6f3ff',
+    lightBlue: isDarkMode ? '#1e3a8a' : '#e6f3ff',
     successGreen: '#4CAF50',
-    lightGreen: '#e8f5e8',
+    lightGreen: isDarkMode ? '#16a34a' : '#e8f5e8',
     warningOrange: '#FF9800',
-    lightOrange: '#fff3e0',
+    lightOrange: isDarkMode ? '#ea580c' : '#fff3e0',
     gold: '#FFD700',
-    lightGold: '#fff8dc',
-  }), [colors, isDarkMode]);
+    lightGold: isDarkMode ? '#fbbf24' : '#fff8dc',
+    // Cores de fundo para modo escuro
+    statsBgBlue: isDarkMode ? '#1e3a8a' : '#e6f3ff',
+    statsBgGreen: isDarkMode ? '#16a34a' : '#e8f5e8',
+    statsBgOrange: isDarkMode ? '#ea580c' : '#fff3e0',
+  };
 
   const stats = [
     {
@@ -28,23 +66,24 @@ export default function ProfileScreen({ navigation }) {
       value: '125',
       label: 'Pontos',
       color: theme.primaryBlue,
-      backgroundColor: theme.lightBlue,
+      backgroundColor: theme.statsBgBlue,
     },
     {
       id: 2,
       value: '2',
       label: 'Aprovados',
       color: theme.successGreen,
-      backgroundColor: theme.lightGreen,
+      backgroundColor: theme.statsBgGreen,
     },
     {
       id: 3,
       value: '2',
       label: 'Conquistas',
       color: theme.warningOrange,
-      backgroundColor: theme.lightOrange,
+      backgroundColor: theme.statsBgOrange,
     }
   ];
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -71,21 +110,46 @@ export default function ProfileScreen({ navigation }) {
         <View style={[styles.profileCard, { backgroundColor: theme.cardBackground, shadowColor: theme.textColor }]}>
           {/* Cover Image Area */}
           <View style={styles.coverImageArea}>
-            <View style={styles.gradientBackground} />
+            {user?.cover_photo ? (
+              <Image 
+                source={{ uri: user.cover_photo }} 
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.gradientBackground} />
+            )}
           </View>
           
           {/* Profile Picture */}
           <View style={styles.profilePictureContainer}>
-            <View style={[styles.profilePicture, { backgroundColor: theme.primaryBlue }]}>
-              <Text style={styles.profileInitials}>
-                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-              </Text>
-            </View>
+            <TouchableOpacity 
+              style={[styles.profilePicture, { backgroundColor: theme.primaryBlue }]}
+              onPress={selectImage}
+              disabled={isLoading}
+            >
+              {user?.profile_photo ? (
+                <Image 
+                  source={{ uri: user.profile_photo }} 
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.profileInitials}>
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                </Text>
+              )}
+            </TouchableOpacity>
             
             {/* Edit Profile Button */}
-            <TouchableOpacity style={[styles.editButton, { backgroundColor: '#666' }]}>
-              <Text style={styles.editIcon}>📷</Text>
-              <Text style={styles.editText}>Editar Perfil</Text>
+            <TouchableOpacity 
+              style={[styles.editButton, { backgroundColor: theme.primaryBlue }]}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={styles.editIcon}>✏️</Text>
+              <Text style={styles.editText}>
+                Editar Perfil
+              </Text>
             </TouchableOpacity>
           </View>
           
@@ -95,9 +159,15 @@ export default function ProfileScreen({ navigation }) {
               {user?.name || 'Usuário'}
             </Text>
             <Text style={[styles.userRole, { color: theme.textColor + '88' }]}>Estudante</Text>
-            <Text style={[styles.personalizeText, { color: theme.textColor + '66' }]}>
-              Personalize seu perfil adicionando uma foto e capa!
-            </Text>
+            {user?.bio ? (
+              <Text style={[styles.bioText, { color: theme.textColor + '88' }]}>
+                {user.bio}
+              </Text>
+            ) : (
+              <Text style={[styles.personalizeText, { color: theme.textColor + '66' }]}>
+                Personalize seu perfil adicionando uma foto e capa!
+              </Text>
+            )}
           </View>
         </View>
 
@@ -172,6 +242,10 @@ const styles = StyleSheet.create({
     height: 120,
     position: 'relative',
   },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
   gradientBackground: {
     position: 'absolute',
     top: 0,
@@ -209,6 +283,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -241,6 +320,12 @@ const styles = StyleSheet.create({
   personalizeText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  bioText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   statsCard: {
     borderRadius: 16,

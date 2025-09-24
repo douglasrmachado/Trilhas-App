@@ -1,16 +1,26 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, memo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, StatusBar, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
-export default function HomeScreen({ navigation }) {
+const HomeScreen = memo(function HomeScreen({ navigation }) {
   const { logout, user } = useAuth();
   const { colors, isDarkMode, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('todas');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  // Fechar menu quando a tela ganha foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setSidebarOpen(false);
+      setProfileDropdownOpen(false);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const newsData = [
     {
@@ -49,9 +59,13 @@ export default function HomeScreen({ navigation }) {
     cardBg: isDarkMode ? '#1e293b' : '#fff',
     cardBackground: isDarkMode ? '#1e293b' : '#fff',
     primaryBlue: '#1e90ff',
-    lightBlue: '#e6f3ff',
-    darkBlue: '#0066cc',
-    lightGreen: '#4CAF50',
+    lightBlue: isDarkMode ? '#1e3a8a' : '#e6f3ff',
+    darkBlue: isDarkMode ? '#3b82f6' : '#0066cc',
+    lightGreen: isDarkMode ? '#16a34a' : '#4CAF50',
+    newsCardBg: isDarkMode ? '#1e3a8a' : '#e6f3ff',
+    newsTextColor: isDarkMode ? '#e2e8f0' : '#0066cc',
+    navButtonBg: isDarkMode ? '#1e293b' : '#fff',
+    navButtonBorder: isDarkMode ? '#334155' : 'rgba(0,0,0,0.1)',
   }), [colors, isDarkMode]);
 
   const trailsData = [
@@ -131,38 +145,38 @@ export default function HomeScreen({ navigation }) {
 
   const flatListRef = React.useRef(null);
 
-  const goToPreviousNews = () => {
+  const goToPreviousNews = useCallback(() => {
     const newIndex = currentNewsIndex === 0 ? newsData.length - 1 : currentNewsIndex - 1;
     setCurrentNewsIndex(newIndex);
     flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
-  };
+  }, [currentNewsIndex]);
 
-  const goToNextNews = () => {
+  const goToNextNews = useCallback(() => {
     const newIndex = currentNewsIndex === newsData.length - 1 ? 0 : currentNewsIndex + 1;
     setCurrentNewsIndex(newIndex);
     flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
-  };
+  }, [currentNewsIndex]);
 
-  const renderNewsItem = ({ item, index }) => (
-    <View style={[styles.newsCardContent, { backgroundColor: theme.lightBlue }]}>
+  const renderNewsItem = useCallback(({ item, index }) => (
+    <View style={[styles.newsCardContent, { backgroundColor: theme.newsCardBg }]}>
       <Text style={styles.newsIcon}>{item.icon}</Text>
-      <Text style={[styles.newsTitle, { color: theme.darkBlue }]}>{item.title}</Text>
-      <Text style={[styles.newsSubtitle, { color: theme.primaryBlue }]}>{item.subtitle}</Text>
-      <Text style={[styles.newsInfo, { color: theme.primaryBlue }]}>
+      <Text style={[styles.newsTitle, { color: theme.newsTextColor }]}>{item.title}</Text>
+      <Text style={[styles.newsSubtitle, { color: theme.newsTextColor }]}>{item.subtitle}</Text>
+      <Text style={[styles.newsInfo, { color: theme.newsTextColor }]}>
         {item.info}
       </Text>
       <View style={styles.newsDate}>
         <Text style={styles.calendarIcon}>📅</Text>
-        <Text style={[styles.dateText, { color: theme.primaryBlue }]}>{item.date}</Text>
+        <Text style={[styles.dateText, { color: theme.newsTextColor }]}>{item.date}</Text>
       </View>
     </View>
-  );
+  ), [theme]);
 
-  const onViewableItemsChanged = ({ viewableItems }) => {
+  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
     if (viewableItems.length > 0) {
       setCurrentNewsIndex(viewableItems[0].index);
     }
-  };
+  }, []);
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50,
@@ -196,7 +210,16 @@ export default function HomeScreen({ navigation }) {
               style={styles.userInfo}
               onPress={() => setProfileDropdownOpen(!profileDropdownOpen)}
             >
-              <Text style={styles.userIcon}>👤</Text>
+              {user?.profile_photo ? (
+                <Image 
+                  source={{ uri: user.profile_photo }} 
+                  style={styles.userProfileImage}
+                />
+              ) : (
+                <View style={styles.userIconContainer}>
+                  <Text style={styles.userIcon}>👤</Text>
+                </View>
+              )}
               <Text style={[styles.userName, { color: theme.textColor }]}>
                 {user?.name || 'Usuário'}
               </Text>
@@ -208,7 +231,14 @@ export default function HomeScreen({ navigation }) {
                 {/* User Info Section */}
                 <View style={styles.dropdownUserInfo}>
                   <View style={styles.dropdownUserIcon}>
-                    <Text style={styles.dropdownProfileIcon}>👤</Text>
+                    {user?.profile_photo ? (
+                      <Image 
+                        source={{ uri: user.profile_photo }} 
+                        style={styles.dropdownProfileImage}
+                      />
+                    ) : (
+                      <Text style={styles.dropdownProfileIcon}>👤</Text>
+                    )}
                   </View>
                   <View style={styles.dropdownUserDetails}>
                     <Text style={[styles.dropdownUserName, { color: theme.textColor }]}>
@@ -278,7 +308,10 @@ export default function HomeScreen({ navigation }) {
           {/* Collapsible Menu Items */}
           {sidebarOpen && (
             <View style={styles.menuItems}>
-              <TouchableOpacity style={[styles.menuButton, { backgroundColor: theme.cardBg }]}>
+              <TouchableOpacity 
+                style={[styles.menuButton, { backgroundColor: theme.cardBg }]}
+                onPress={() => navigation.navigate('CampusInfo')}
+              >
                 <Text style={styles.menuButtonIcon}>🗺️</Text>
                 <Text style={[styles.menuButtonText, { color: theme.textColor }]}>Informações sobre o campus</Text>
               </TouchableOpacity>
@@ -342,14 +375,39 @@ export default function HomeScreen({ navigation }) {
                   offset: Dimensions.get('window').width * index,
                   index,
                 })}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={2}
+                windowSize={3}
+                initialNumToRender={2}
+                updateCellsBatchingPeriod={50}
               />
               
               <View style={styles.newsNavigation}>
-                <TouchableOpacity style={styles.navButton} onPress={goToPreviousNews}>
-                  <Text style={styles.navIcon}>←</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.navButton, 
+                    { 
+                      backgroundColor: theme.navButtonBg,
+                      borderColor: theme.navButtonBorder,
+                      shadowColor: theme.textColor
+                    }
+                  ]} 
+                  onPress={goToPreviousNews}
+                >
+                  <Text style={[styles.navIcon, { color: theme.primaryBlue }]}>←</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.navButton} onPress={goToNextNews}>
-                  <Text style={styles.navIcon}>→</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.navButton, 
+                    { 
+                      backgroundColor: theme.navButtonBg,
+                      borderColor: theme.navButtonBorder,
+                      shadowColor: theme.textColor
+                    }
+                  ]} 
+                  onPress={goToNextNews}
+                >
+                  <Text style={[styles.navIcon, { color: theme.primaryBlue }]}>→</Text>
                 </TouchableOpacity>
               </View>
               
@@ -479,7 +537,9 @@ export default function HomeScreen({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+});
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -503,6 +563,8 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    maxWidth: '60%',
   },
   graduationIcon: {
     fontSize: 24,
@@ -511,15 +573,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    flex: 1,
+    numberOfLines: 1,
+    ellipsizeMode: 'tail',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    minWidth: '40%',
   },
   themeButton: {
     padding: 8,
     borderRadius: 20,
-    marginRight: 15,
+    marginRight: 8,
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
@@ -535,18 +602,36 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.05)',
+    maxWidth: 140,
+    minWidth: 80,
+  },
+  userIconContainer: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
   },
   userIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    fontSize: 14,
+  },
+  userProfileImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: 4,
   },
   userName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
+    flex: 1,
+    numberOfLines: 1,
+    ellipsizeMode: 'tail',
+    marginLeft: 4,
   },
   profileDropdown: {
     position: 'absolute',
@@ -581,6 +666,11 @@ const styles = StyleSheet.create({
   dropdownProfileIcon: {
     fontSize: 20,
     color: '#fff',
+  },
+  dropdownProfileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   dropdownUserDetails: {
     flex: 1,
@@ -835,24 +925,20 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -20 }],
   },
   navButton: {
-    backgroundColor: '#fff',
     borderRadius: 25,
     width: 50,
     height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
   navIcon: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e90ff',
   },
   newsIndicators: {
     flexDirection: 'row',

@@ -11,6 +11,8 @@ import CreateProfessorScreen from './src/screens/CreateProfessorScreen';
 import ContactScreen from './src/screens/ContactScreen';
 import TrailDetailScreen from './src/screens/TrailDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import CampusInfoScreen from './src/screens/CampusInfoScreen';
 import SubmitContentScreen from './src/screens/SubmitContentScreen';
 import SubmissionsListScreen from './src/screens/SubmissionsListScreen';
 import SubmissionDetailScreen from './src/screens/SubmissionDetailScreen';
@@ -78,6 +80,8 @@ function RootNavigator() {
           <Stack.Screen name="ReviewedSubmissions" component={ReviewedSubmissionsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
           <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CampusInfo" component={CampusInfoScreen} options={{ headerShown: false }} />
         </>
       ) : (
         <>
@@ -88,6 +92,8 @@ function RootNavigator() {
           <Stack.Screen name="MySubmissions" component={MySubmissionsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MySubmissionDetail" component={MySubmissionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CampusInfo" component={CampusInfoScreen} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>

@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { json } from 'express';
 import authRouter from './routes/auth';
 import submissionsRouter from './routes/submissions';
@@ -12,9 +15,30 @@ const app = express();
 // Validar configurações
 validateConfig();
 
+// Middlewares de segurança e performance
+app.use(helmet({
+  contentSecurityPolicy: false, // Desabilitado para desenvolvimento
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(compression());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 requests por IP por janela de tempo
+  message: {
+    error: 'Muitas requisições deste IP, tente novamente em 15 minutos.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+
 // Middlewares globais
 app.use(cors(config.cors));
-app.use(json());
+app.use(json({ limit: '10mb' })); // Limite de tamanho para uploads
 
 // Logs de requisições
 app.use((req, res, next) => {

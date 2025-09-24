@@ -8,6 +8,7 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Image,
   Alert
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +41,15 @@ export default function ProfessorHomeScreen({ navigation }) {
   useEffect(() => {
     loadPendingSubmissions();
   }, []);
+
+  // Fechar dropdown quando a tela ganha foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setProfileDropdownOpen(false);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const loadPendingSubmissions = async () => {
     try {
@@ -98,9 +108,18 @@ export default function ProfessorHomeScreen({ navigation }) {
               style={styles.userInfo}
               onPress={() => setProfileDropdownOpen(!profileDropdownOpen)}
             >
-              <Text style={styles.userIcon}>👤</Text>
+              {user?.profile_photo ? (
+                <Image 
+                  source={{ uri: user.profile_photo }} 
+                  style={styles.userProfileImage}
+                />
+              ) : (
+                <View style={styles.userIconContainer}>
+                  <Text style={styles.userIcon}>👤</Text>
+                </View>
+              )}
               <Text style={[styles.userName, { color: theme.textColor }]}>
-                {user?.name || 'Professor Silva'}
+                {user?.name || 'Professor'}
               </Text>
             </TouchableOpacity>
             
@@ -110,11 +129,18 @@ export default function ProfessorHomeScreen({ navigation }) {
                 {/* User Info Section */}
                 <View style={styles.dropdownUserInfo}>
                   <View style={styles.dropdownUserIcon}>
-                    <Text style={styles.dropdownProfileIcon}>👤</Text>
+                    {user?.profile_photo ? (
+                      <Image 
+                        source={{ uri: user.profile_photo }} 
+                        style={styles.dropdownProfileImage}
+                      />
+                    ) : (
+                      <Text style={styles.dropdownProfileIcon}>👤</Text>
+                    )}
                   </View>
                   <View style={styles.dropdownUserDetails}>
                     <Text style={[styles.dropdownUserName, { color: theme.textColor }]}>
-                      {user?.name || 'Professor Silva'}
+                      {user?.name || 'Professor'}
                     </Text>
                     <Text style={[styles.dropdownUserEmail, { color: theme.textColor }]}>
                       {user?.email || 'professor@instituto.edu.br'}
@@ -321,6 +347,9 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-end',
+    maxWidth: '50%',
   },
   themeButton: {
     paddingHorizontal: 12,
@@ -342,15 +371,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     maxWidth: 120,
+    minWidth: 80,
+  },
+  userIconContainer: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
   },
   userIcon: {
     fontSize: 14,
+  },
+  userProfileImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     marginRight: 6,
   },
   userName: {
     fontSize: 12,
     fontWeight: '600',
-    flexShrink: 1,
+    flex: 1,
+    numberOfLines: 1,
+    ellipsizeMode: 'tail',
+    marginLeft: 4,
   },
   profileDropdown: {
     position: 'absolute',
@@ -384,6 +429,11 @@ const styles = StyleSheet.create({
   dropdownProfileIcon: {
     fontSize: 18,
     color: '#fff',
+  },
+  dropdownProfileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   dropdownUserDetails: {
     flex: 1,

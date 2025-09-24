@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,8 +7,9 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import PasswordInput from '../components/PasswordInput';
+import OptimizedImage from '../components/OptimizedImage';
 
-export default function LoginScreen({ navigation }) {
+const LoginScreen = memo(function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,7 @@ export default function LoginScreen({ navigation }) {
     }
   }, [activeTab]);
 
-  async function handleLogin() {
+  const handleLogin = useCallback(async () => {
     try {
       if (!email || !password) {
         Alert.alert('Atenção', 'Preencha todos os campos');
@@ -94,9 +95,9 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, password, apiUrl, login]);
 
-  async function handleRegister() {
+  const handleRegister = useCallback(async () => {
     try {
       if (!name || !email || !registryId || !password || !confirmPassword) {
         Alert.alert('Atenção', 'Preencha todos os campos');
@@ -144,7 +145,7 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [name, email, registryId, password, confirmPassword, apiUrl]);
 
 
   return (
@@ -179,9 +180,14 @@ export default function LoginScreen({ navigation }) {
           {/* Logo Section */}
           <View style={styles.logoSection}>
             <View style={[styles.logoContainer, { backgroundColor: isDarkMode ? '#1e293b' : '#fff' }]}>
-              <Image source={require('../../assets/TRILHAS.png')} style={styles.logo} resizeMode="contain" />
+              <OptimizedImage 
+                source={require('../../assets/TRILHAS.png')} 
+                style={styles.logo} 
+                resizeMode="contain"
+                placeholder={<Text style={styles.logoPlaceholder}>TRILHAS</Text>}
+              />
             </View>
-            <Text style={[styles.appTitle, { color: themed.text }]}>Trilhas</Text>
+            <Text style={[styles.appTitle, { color: themed.text }]}>IFPR</Text>
             <Text style={[styles.appSubtitle, { color: themed.text + '88' }]}>Criando caminhos para o futuro</Text>
           </View>
 
@@ -335,7 +341,9 @@ export default function LoginScreen({ navigation }) {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+});
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -507,6 +515,11 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  logoPlaceholder: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e90ff',
   },
 });
 
