@@ -5,9 +5,6 @@ export interface User {
   matricula: string;
   password_hash: string;
   role: 'student' | 'professor';
-  profile_photo?: string;
-  bio?: string;
-  cover_photo?: string;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -31,7 +28,6 @@ export interface AuthResponse {
 
 export interface JWTPayload {
   sub: number;
-  id: number;
   email: string;
   role: 'student' | 'professor';
   iat?: number;
