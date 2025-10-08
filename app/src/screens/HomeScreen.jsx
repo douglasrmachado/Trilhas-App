@@ -1,16 +1,19 @@
 import React, { useMemo, useState, useCallback, memo, useEffect } from 'react';
+import Constants from 'expo-constants';
+import axios from 'axios';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, StatusBar, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const HomeScreen = memo(function HomeScreen({ navigation }) {
-  const { logout, user } = useAuth();
+  const { logout, user, token } = useAuth();
   const { colors, isDarkMode, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('todas');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Fechar menu quando a tela ganha foco
   useEffect(() => {
@@ -52,6 +55,22 @@ const HomeScreen = memo(function HomeScreen({ navigation }) {
       date: 'Disponível 24h'
     }
   ];
+
+  // Buscar contagem de notificações não lidas quando a tela ganhar foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      try {
+        const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.get(`${apiUrl}/notifications/count`, { headers });
+        const count = response?.data?.count ?? 0;
+        setUnreadCount(count);
+      } catch (e) {
+        // silenciar na UI
+      }
+    });
+    return unsubscribe;
+  }, [navigation, token]);
 
   const theme = useMemo(() => ({
     backgroundColor: colors.background,
@@ -204,6 +223,18 @@ const HomeScreen = memo(function HomeScreen({ navigation }) {
               {isDarkMode ? '☀' : '🌙'}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Text style={styles.bellIcon}>📋</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           
           <View style={styles.profileContainer}>
             <TouchableOpacity 
@@ -220,7 +251,7 @@ const HomeScreen = memo(function HomeScreen({ navigation }) {
                   <Text style={styles.userIcon}>👤</Text>
                 </View>
               )}
-              <Text style={[styles.userName, { color: theme.textColor }]}>
+              <Text style={[styles.userName, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
                 {user?.name || 'Usuário'}
               </Text>
             </TouchableOpacity>
@@ -582,11 +613,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     minWidth: '40%',
+    
   },
   themeButton: {
-    padding: 8,
+    padding: 5,
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: 4,
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
@@ -595,6 +627,32 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  bellButton: {
+    position: 'relative',
+    marginLeft: 6,
+    padding: 5,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)'
+  },
+  bellIcon: {
+    fontSize: 18,
+  },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    minWidth: 16,
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   profileContainer: {
     position: 'relative',
     zIndex: 1000,
@@ -602,12 +660,14 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.05)',
-    maxWidth: 140,
-    minWidth: 80,
+    maxWidth: 170,
+    minWidth: 100,
+    marginRight: 8,
+    marginLeft: 8,
   },
   userIconContainer: {
     width: 20,

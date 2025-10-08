@@ -14,6 +14,10 @@ export async function bootstrapDatabase() {
     
     // Criar tabela de submissões
     await ensureSubmissionsTable();
+    await ensureSubmissionColumns();
+    
+    // Criar tabela de notificações
+    await ensureNotificationsTable();
     
     // Criar usuário admin inicial
     await seedInitialAdmin();
@@ -97,6 +101,83 @@ async function ensureSubmissionsTable() {
     }
   } catch (err) {
     console.error('❌ Erro ao verificar/criar tabela submissions:', err);
+    throw err;
+  }
+}
+
+/**
+ * Garante que colunas necessárias existam em 'submissions'
+ */
+async function ensureSubmissionColumns() {
+  try {
+    // Mapear colunas esperadas e seus DDLs
+    const expectedColumns: Array<{ name: string; ddl: string }> = [
+      { name: 'feedback', ddl: "ALTER TABLE submissions ADD COLUMN feedback TEXT NULL AFTER status" },
+      { name: 'reviewed_by', ddl: "ALTER TABLE submissions ADD COLUMN reviewed_by INT NULL AFTER feedback" },
+      { name: 'reviewed_at', ddl: "ALTER TABLE submissions ADD COLUMN reviewed_at TIMESTAMP NULL AFTER reviewed_by" },
+      { name: 'updated_at', ddl: "ALTER TABLE submissions ADD COLUMN updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at" },
+      { name: 'file_path', ddl: "ALTER TABLE submissions ADD COLUMN file_path VARCHAR(500) NULL AFTER keywords" },
+      { name: 'file_name', ddl: "ALTER TABLE submissions ADD COLUMN file_name VARCHAR(255) NULL AFTER file_path" },
+      { name: 'file_size', ddl: "ALTER TABLE submissions ADD COLUMN file_size INT NULL AFTER file_name" },
+    ];
+
+    for (const col of expectedColumns) {
+      try {
+        const [rows] = await pool.query(
+          `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'submissions' AND COLUMN_NAME = ?`,
+          [col.name]
+        );
+        const cnt = Array.isArray(rows) && rows[0] && (rows[0] as any).cnt ? Number((rows[0] as any).cnt) : 0;
+        if (cnt === 0) {
+          await pool.query(col.ddl);
+          console.log(`✅ Coluna adicionada em submissions: ${col.name}`);
+        }
+      } catch (err) {
+        console.error(`❌ Erro ao garantir coluna ${col.name} em submissions:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Erro ao verificar/adicionar colunas em submissions:', err);
+  }
+}
+
+/**
+ * Garante que a tabela de notificações existe
+ */
+async function ensureNotificationsTable() {
+  try {
+    const [tableRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM INFORMATION_SCHEMA.TABLES
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notifications'`
+    );
+    
+    const tableCount = Array.isArray(tableRows) && tableRows[0] && (tableRows[0] as any).cnt 
+      ? Number((tableRows[0] as any).cnt) 
+      : 0;
+    
+    if (tableCount === 0) {
+      await pool.query(`
+        CREATE TABLE notifications (
+          id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          user_id INT UNSIGNED NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          body TEXT,
+          is_read BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_user_id (user_id),
+          INDEX idx_is_read (is_read),
+          INDEX idx_created_at (created_at)
+        )
+      `);
+      console.log("✅ Tabela 'notifications' criada com sucesso");
+    } else {
+      console.log("✅ Tabela 'notifications' já existe");
+    }
+  } catch (err) {
+    console.error('❌ Erro ao verificar/criar tabela notifications:', err);
     throw err;
   }
 }

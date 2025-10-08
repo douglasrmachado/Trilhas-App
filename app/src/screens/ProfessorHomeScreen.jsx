@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import Constants from 'expo-constants';
+import axios from 'axios';
 import { 
   View, 
   Text, 
@@ -6,11 +8,11 @@ import {
   TouchableOpacity, 
   ScrollView, 
   TextInput,
-  SafeAreaView,
   StatusBar,
   Image,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getApiUrl } from '../config/api';
@@ -20,6 +22,7 @@ export default function ProfessorHomeScreen({ navigation }) {
   const { colors, isDarkMode, toggle } = useTheme();
   
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [selectedFilter1, setSelectedFilter1] = useState('Todos');
   const [selectedFilter2, setSelectedFilter2] = useState('Todas');
   const [selectedFilter3, setSelectedFilter3] = useState('Todos');
@@ -50,6 +53,22 @@ export default function ProfessorHomeScreen({ navigation }) {
 
     return unsubscribe;
   }, [navigation]);
+
+  // Buscar contagem de notificações não lidas quando a tela ganhar foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      try {
+        const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.get(`${apiUrl}/notifications/count`, { headers });
+        const count = response?.data?.count ?? 0;
+        setUnreadCount(count);
+      } catch (e) {
+        // silenciar na UI
+      }
+    });
+    return unsubscribe;
+  }, [navigation, token]);
 
   const loadPendingSubmissions = async () => {
     try {
@@ -82,7 +101,7 @@ export default function ProfessorHomeScreen({ navigation }) {
 
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}> 
       <StatusBar 
         barStyle={isDarkMode ? "light-content" : "dark-content"} 
         backgroundColor={theme.backgroundColor}
@@ -92,7 +111,7 @@ export default function ProfessorHomeScreen({ navigation }) {
       <View style={[styles.header, { backgroundColor: theme.cardBg }]}>
         <View style={styles.headerLeft}>
           <Text style={styles.graduationIcon}>🎓</Text>
-          <Text style={[styles.headerTitle, { color: theme.textColor }]}>Área do Professor</Text>
+          <Text style={[styles.headerTitle, { color: theme.textColor }]} numberOfLines={2} ellipsizeMode="tail">Área do Professor</Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -100,7 +119,19 @@ export default function ProfessorHomeScreen({ navigation }) {
             style={[styles.themeButton, { backgroundColor: isDarkMode ? theme.textColor + '20' : 'rgba(0,0,0,0.05)' }]}
             onPress={() => toggle()}
           >
-            <Text style={styles.themeIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
+            <Text style={styles.themeIcon}>{isDarkMode ? '☀' : '🌙'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Text style={styles.bellIcon}>📋</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           
           <View style={styles.profileContainer}>
@@ -118,7 +149,7 @@ export default function ProfessorHomeScreen({ navigation }) {
                   <Text style={styles.userIcon}>👤</Text>
                 </View>
               )}
-              <Text style={[styles.userName, { color: theme.textColor }]}>
+              <Text style={[styles.userName, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
                 {user?.name || 'Professor'}
               </Text>
             </TouchableOpacity>
@@ -264,7 +295,7 @@ export default function ProfessorHomeScreen({ navigation }) {
             <TouchableOpacity 
               key={submission.id} 
               style={[styles.contentCard, { backgroundColor: theme.cardBg }]}
-              onPress={() => navigation.navigate('SubmissionDetail', { submission })}
+              onPress={() => navigation.navigate('SubmissionDetail', { submission, onReviewed: loadPendingSubmissions })}
             >
               {/* Content Header */}
               <View style={styles.contentHeader}>
@@ -322,9 +353,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -335,30 +366,62 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   graduationIcon: {
     fontSize: 24,
     marginRight: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: 'bold',
+    flex: 1,
+    maxWidth: '85%',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     justifyContent: 'flex-end',
-    maxWidth: '50%',
+    minWidth: '35%',
+    paddingLeft: 8,
   },
   themeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 12,
+    padding: 5,
+    borderRadius: 20,
+    marginRight: 4,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   themeIcon: {
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  bellButton: {
+    position: 'relative',
+    marginLeft: 4,
+    padding: 5,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)'
+  },
+  bellIcon: {
+    fontSize: 18,
+  },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    minWidth: 16,
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   profileContainer: {
     position: 'relative',
@@ -367,11 +430,14 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
-    maxWidth: 120,
-    minWidth: 80,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    maxWidth: 150,
+    minWidth: 100,
+    marginRight: 8,
+    marginLeft: 8,
   },
   userIconContainer: {
     width: 20,

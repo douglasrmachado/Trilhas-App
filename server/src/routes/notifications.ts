@@ -1,0 +1,36 @@
+import { Router, Request, Response } from 'express';
+import { requireAuth } from '../middleware/auth';
+import { NotificationService } from '../services/NotificationService';
+import { asyncHandler } from '../utils/errorHandler';
+
+const router = Router();
+const service = new NotificationService();
+
+router.get('/', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const onlyUnread = req.query.onlyUnread === 'true';
+  const limit = Math.min(Number(req.query.limit || 50), 100);
+  const offset = Number(req.query.offset || 0);
+  const items = await service.list(userId, onlyUnread, limit, offset);
+  res.json({ success: true, items });
+}));
+
+router.get('/count', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const count = await service.countUnread(userId);
+  res.json({ success: true, count });
+}));
+
+router.post('/clear', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  await service.markAllRead(userId);
+  res.json({ success: true });
+}));
+
+export default router;
+
+
+
+
+
+

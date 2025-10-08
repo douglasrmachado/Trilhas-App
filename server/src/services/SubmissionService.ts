@@ -1,5 +1,6 @@
 import pool from '../db';
 import { Submission, CreateSubmissionRequest, SubmissionResponse } from '../models/Submission';
+import { NotificationService } from './NotificationService';
 
 export class SubmissionService {
   /**
@@ -142,6 +143,16 @@ export class SubmissionService {
       'UPDATE submissions SET status = ?, feedback = ?, reviewed_by = ?, reviewed_at = NOW(), updated_at = NOW() WHERE id = ?',
       [status, feedback || null, reviewedBy || null, submissionId]
     );
+
+    // Criar notificação para o autor da submissão
+    const [rows] = await pool.query('SELECT user_id, title FROM submissions WHERE id = ?', [submissionId]);
+    const sub = (rows as any[])[0];
+    if (sub && sub.user_id) {
+      const notif = new NotificationService();
+      const title = status === 'approved' ? 'Submissão aprovada' : 'Submissão rejeitada';
+      const body = `Seu conteúdo "${sub.title}" foi ${status === 'approved' ? 'aprovado' : 'rejeitado'}.`;
+      await notif.create(sub.user_id, 'submission_reviewed', title, body);
+    }
   }
 
   /**

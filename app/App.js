@@ -19,6 +19,7 @@ import SubmissionDetailScreen from './src/screens/SubmissionDetailScreen';
 import MySubmissionsScreen from './src/screens/MySubmissionsScreen';
 import MySubmissionDetailScreen from './src/screens/MySubmissionDetailScreen';
 import ReviewedSubmissionsScreen from './src/screens/ReviewedSubmissionsScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { Text, View } from 'react-native';
 
@@ -74,6 +75,7 @@ function RootNavigator() {
       {user?.role === 'professor' ? (
         <>
           <Stack.Screen name="ProfessorHome" component={ProfessorHomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ title: 'Criar Professor' }} />
           <Stack.Screen name="SubmissionsList" component={SubmissionsListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SubmissionDetail" component={SubmissionDetailScreen} options={{ headerShown: false }} />
@@ -86,6 +88,7 @@ function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
           <Stack.Screen name="TrailDetail" component={TrailDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SubmitContent" component={SubmitContentScreen} options={{ headerShown: false }} />

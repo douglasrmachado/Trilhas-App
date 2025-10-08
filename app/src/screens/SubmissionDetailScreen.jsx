@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../config/api';
 
 export default function SubmissionDetailScreen({ navigation, route }) {
-  const { submission } = route.params;
+  const { submission, onReviewed } = route.params;
   const { colors, isDarkMode } = useTheme();
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -125,7 +125,12 @@ export default function SubmissionDetailScreen({ navigation, route }) {
           [
             {
               text: 'OK',
-              onPress: () => navigation.goBack()
+              onPress: () => {
+                if (typeof onReviewed === 'function') {
+                  onReviewed();
+                }
+                navigation.goBack();
+              }
             }
           ]
         );

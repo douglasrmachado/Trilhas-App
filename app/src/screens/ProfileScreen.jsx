@@ -119,6 +119,13 @@ export default function ProfileScreen({ navigation }) {
             ) : (
               <View style={styles.gradientBackground} />
             )}
+            <TouchableOpacity 
+              style={styles.coverCameraBadge}
+              onPress={selectImage}
+              disabled={isLoading}
+            >
+              <Text style={styles.coverCameraIcon}>📷</Text>
+            </TouchableOpacity>
           </View>
           
           {/* Profile Picture */}
@@ -139,6 +146,9 @@ export default function ProfileScreen({ navigation }) {
                   {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                 </Text>
               )}
+              <View style={styles.profilePhotoBadge}>
+                <Text style={styles.profilePhotoIcon}>📷</Text>
+              </View>
             </TouchableOpacity>
             
             {/* Edit Profile Button */}
@@ -255,6 +265,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
     background: 'linear-gradient(135deg, #4A90E2 0%, #7B68EE 100%)',
   },
+  coverCameraBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  coverCameraIcon: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   profilePictureContainer: {
     position: 'absolute',
     top: 80,
@@ -277,6 +301,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  profilePhotoBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  profilePhotoIcon: {
+    fontSize: 12,
   },
   profileInitials: {
     fontSize: 28,
