@@ -4,9 +4,41 @@ import { requireAuth, requireProfessor } from '../middleware/auth';
 import { asyncHandler } from '../utils/errorHandler';
 import { z } from 'zod';
 import pool from '../db';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 
 const router = Router();
 const submissionService = new SubmissionService();
+
+// Configurar multer para upload de arquivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos PDF são permitidos'));
+    }
+  }
+});
 
 // Schema de validação para criação de submissão
 const createSubmissionSchema = z.object({
@@ -23,10 +55,11 @@ const createSubmissionSchema = z.object({
  * @desc    Criar uma nova submissão
  * @access  Private (Estudantes)
  */
-router.post('/', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/', requireAuth, upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   console.log('📝 Nova submissão recebida:', { 
     userId: req.user?.sub, 
-    title: req.body?.title 
+    title: req.body?.title,
+    hasFile: !!req.file
   });
 
   const data = createSubmissionSchema.parse(req.body);
@@ -39,9 +72,28 @@ router.post('/', requireAuth, asyncHandler(async (req: Request, res: Response) =
     });
   }
 
+  // Preparar informações do arquivo se houver
+  let fileInfo = undefined;
+  if (req.file) {
+    fileInfo = {
+      fileName: req.file.originalname,
+      filePath: req.file.filename,
+      fileSize: req.file.size
+    };
+    console.log('📎 Arquivo anexado:', fileInfo);
+  }
+
   const submission = await submissionService.createSubmission(
     req.user.sub,
-    data
+    {
+      title: data.title,
+      subject: data.subject,
+      year: data.year,
+      contentType: data.contentType,
+      description: data.description,
+      ...(data.keywords && { keywords: data.keywords })
+    },
+    fileInfo
   );
 
   console.log('✅ Submissão criada com sucesso:', submission.id);
@@ -92,6 +144,9 @@ router.get('/', requireProfessor, asyncHandler(async (req: Request, res: Respons
  */
 router.get('/my', requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.sub;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Não autenticado' });
+  }
   console.log('📋 Buscando submissões do usuário:', userId);
 
   const submissions = await submissionService.getSubmissionsByUserId(userId);
@@ -231,6 +286,81 @@ router.get('/test/count', requireAuth, asyncHandler(async (req: Request, res: Re
     success: true,
     message: `Total de submissões no banco: ${total}`,
     total: total
+  });
+}));
+
+/**
+ * @route   GET /submissions/:id/download
+ * @desc    Download do arquivo anexado de uma submissão
+ * @access  Private (Professores e autor da submissão)
+ */
+router.get('/:id/download', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  console.log('📥 Download de arquivo solicitado:', { submissionId: id, userId: req.user?.sub });
+
+  // Buscar informações da submissão
+  const submission = await submissionService.getSubmissionById(Number(id));
+  
+  if (!submission) {
+    return res.status(404).json({
+      success: false,
+      message: 'Submissão não encontrada'
+    });
+  }
+
+  // Verificar se o usuário pode acessar esta submissão
+  // Alunos podem baixar:
+  // 1. Suas próprias submissões
+  // 2. Submissões aprovadas (conteúdos públicos da trilha)
+  if (req.user?.role === 'student') {
+    const isOwner = submission.user_id === req.user.sub;
+    const isApproved = submission.status === 'approved';
+    
+    if (!isOwner && !isApproved) {
+      return res.status(403).json({
+        success: false,
+        message: 'Você não tem permissão para baixar este arquivo'
+      });
+    }
+  }
+
+  // Verificar se há arquivo anexado
+  if (!submission.file_path || !submission.file_name) {
+    return res.status(404).json({
+      success: false,
+      message: 'Nenhum arquivo anexado encontrado'
+    });
+  }
+
+  // Verificar se o arquivo existe no sistema de arquivos
+  const filePath = path.join(process.cwd(), 'uploads', submission.file_path);
+  
+  if (!fs.existsSync(filePath)) {
+    console.error('❌ Arquivo não encontrado no sistema:', filePath);
+    return res.status(404).json({
+      success: false,
+      message: 'Arquivo não encontrado no servidor'
+    });
+  }
+
+  // Configurar headers para download
+  res.setHeader('Content-Disposition', `attachment; filename="${submission.file_name}"`);
+  res.setHeader('Content-Type', 'application/pdf');
+
+  // Enviar o arquivo
+  res.download(filePath, submission.file_name, (err) => {
+    if (err) {
+      console.error('❌ Erro ao enviar arquivo:', err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Erro ao baixar arquivo'
+        });
+      }
+    } else {
+      console.log('✅ Arquivo enviado com sucesso:', submission.file_name);
+    }
   });
 }));
 

@@ -8,7 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
   matricula VARCHAR(64) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('student','professor') NOT NULL DEFAULT 'student',
+  course ENUM('Informática','Meio Ambiente','Produção Cultural','Mecânica') NULL,
   profile_photo TEXT NULL,
+  bio TEXT NULL,
+  cover_photo TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );

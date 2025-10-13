@@ -8,11 +8,16 @@ import {
   Alert,
   StatusBar,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../config/api';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as IntentLauncher from 'expo-intent-launcher';
+import BackButton from '../components/BackButton';
 
 export default function SubmissionDetailScreen({ navigation, route }) {
   const { submission, onReviewed } = route.params;
@@ -147,6 +152,91 @@ export default function SubmissionDetailScreen({ navigation, route }) {
     }
   };
 
+  const handleFileDownload = async (submissionId, fileName) => {
+    try {
+      setLoading(true);
+      const apiUrl = getApiUrl();
+      const downloadUrl = `${apiUrl}/submissions/${submissionId}/download`;
+      
+      console.log('📥 Iniciando download:', { submissionId, fileName, downloadUrl });
+      
+      // Criar nome do arquivo local
+      const localFileName = `${fileName}`;
+      const localUri = FileSystem.documentDirectory + localFileName;
+      
+      // Fazer download do arquivo com autenticação
+      const downloadResult = await FileSystem.downloadAsync(
+        downloadUrl,
+        localUri,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      console.log('✅ Download concluído:', downloadResult.uri, 'Status:', downloadResult.status);
+      
+      // Verificar se o download foi bem-sucedido
+      if (downloadResult.status === 200) {
+        console.log('📱 Tentando abrir arquivo...');
+        
+        try {
+          // Abrir o arquivo para visualização
+          if (Platform.OS === 'android') {
+            // No Android, usar IntentLauncher para abrir o arquivo com o visualizador de PDF
+            console.log('📱 Android - Convertendo URI...');
+            const contentUri = await FileSystem.getContentUriAsync(downloadResult.uri);
+            console.log('📱 Content URI:', contentUri);
+            
+            await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+              data: contentUri,
+              flags: 1,
+              type: 'application/pdf',
+            });
+            console.log('✅ Arquivo aberto com sucesso');
+          } else {
+            // No iOS, usar Sharing que abre o arquivo para visualização
+            const isAvailable = await Sharing.isAvailableAsync();
+            
+            if (isAvailable) {
+              await Sharing.shareAsync(downloadResult.uri, {
+                mimeType: 'application/pdf',
+                dialogTitle: `Visualizar ${fileName}`,
+                UTI: 'com.adobe.pdf',
+              });
+            } else {
+              Alert.alert('Sucesso', 'Arquivo baixado com sucesso!');
+            }
+          }
+        } catch (openError) {
+          console.error('❌ Erro ao abrir arquivo:', openError);
+          Alert.alert(
+            'Arquivo Baixado',
+            'O arquivo foi baixado, mas não foi possível abri-lo automaticamente. Por favor, abra manualmente na pasta Downloads.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        throw new Error(`Download falhou com status ${downloadResult.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao baixar arquivo:', error);
+      
+      if (error.message.includes('401') || error.message.includes('403')) {
+        Alert.alert('Erro', 'Você não tem permissão para baixar este arquivo');
+      } else if (error.message.includes('404')) {
+        Alert.alert('Erro', 'Arquivo não encontrado no servidor');
+      } else if (error.message.includes('No Activity found')) {
+        Alert.alert('Erro', 'Nenhum aplicativo encontrado para abrir arquivos PDF. Por favor, instale um leitor de PDF.');
+      } else {
+        Alert.alert('Erro', 'Erro ao baixar arquivo. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar 
@@ -156,17 +246,13 @@ export default function SubmissionDetailScreen({ navigation, route }) {
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.headerText }]}>← Voltar</Text>
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <BackButton onPress={() => navigation.goBack()} />
+        </View>
         
         <View style={styles.headerCenter}>
-          <Text style={styles.headerIcon}>📄</Text>
           <Text style={[styles.headerTitle, { color: theme.headerText }]}>
-            Detalhes da Submissão
+            📄 Detalhes
           </Text>
         </View>
         
@@ -281,6 +367,14 @@ export default function SubmissionDetailScreen({ navigation, route }) {
                   {submission.file_size ? `${(submission.file_size / 1024 / 1024).toFixed(2)} MB` : 'Tamanho não disponível'}
                 </Text>
               </View>
+              <TouchableOpacity
+                style={[styles.downloadButton, { backgroundColor: theme.primaryBlue }]}
+                onPress={() => handleFileDownload(submission.id, submission.file_name)}
+                disabled={loading}
+              >
+                <Text style={styles.downloadIcon}>{loading ? '⏳' : '⬇️'}</Text>
+                <Text style={styles.downloadText}>{loading ? 'Baixando...' : 'Baixar'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -391,25 +485,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
+  headerLeft: {
     flex: 1,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
+    alignItems: 'flex-start',
   },
   headerCenter: {
     flex: 2,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   headerRight: {
@@ -499,6 +585,22 @@ const styles = StyleSheet.create({
   },
   fileSize: {
     fontSize: 14,
+  },
+  downloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  downloadIcon: {
+    fontSize: 16,
+  },
+  downloadText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   feedback: {
     fontSize: 16,

@@ -7,9 +7,12 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfessorHomeScreen from './src/screens/ProfessorHomeScreen';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { TrailProvider } from './src/context/TrailContext';
 import CreateProfessorScreen from './src/screens/CreateProfessorScreen';
 import ContactScreen from './src/screens/ContactScreen';
 import TrailDetailScreen from './src/screens/TrailDetailScreen';
+import ModuleContentScreen from './src/screens/ModuleContentScreen';
+import PDFPreviewScreen from './src/screens/PDFPreviewScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import CampusInfoScreen from './src/screens/CampusInfoScreen';
@@ -91,6 +94,8 @@ function RootNavigator() {
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Contact" component={ContactScreen} options={{ headerShown: false }} />
           <Stack.Screen name="TrailDetail" component={TrailDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ModuleContent" component={ModuleContentScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="PDFPreview" component={PDFPreviewScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SubmitContent" component={SubmitContentScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MySubmissions" component={MySubmissionsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MySubmissionDetail" component={MySubmissionDetailScreen} options={{ headerShown: false }} />
@@ -115,9 +120,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <ThemeProvider>
-          <NavigationRoot />
-        </ThemeProvider>
+        <TrailProvider>
+          <ThemeProvider>
+            <NavigationRoot />
+          </ThemeProvider>
+        </TrailProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

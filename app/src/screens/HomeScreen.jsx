@@ -5,10 +5,12 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, StatusBar,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTrails } from '../context/TrailContext';
 
 const HomeScreen = memo(function HomeScreen({ navigation }) {
   const { logout, user, token } = useAuth();
   const { colors, isDarkMode, toggle } = useTheme();
+  const { trails, userStats, loading } = useTrails();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('todas');
@@ -87,78 +89,26 @@ const HomeScreen = memo(function HomeScreen({ navigation }) {
     navButtonBorder: isDarkMode ? '#334155' : 'rgba(0,0,0,0.1)',
   }), [colors, isDarkMode]);
 
-  const trailsData = [
-    {
-      id: 1,
-      title: 'Lógica de Programação',
-      description: 'Pensamento computacional e algoritmos',
-      icon: '💻',
-      progress: 100,
-      completed: 4,
-      total: 4,
-      category: 'base',
-      achievementIcon: '🏆'
-    },
-    {
-      id: 2,
-      title: 'Programação Web',
-      description: 'HTML, CSS, JavaScript e frameworks',
-      icon: '🌐',
-      progress: 75,
-      completed: 3,
-      total: 4,
-      category: 'tecnica',
-      achievementIcon: '🥉'
-    },
-    {
-      id: 3,
-      title: 'Banco de Dados',
-      description: 'Modelagem e gerenciamento de dados',
-      icon: '🗄️',
-      progress: 50,
-      completed: 2,
-      total: 4,
-      category: 'tecnica',
-      achievementIcon: '🥉'
-    },
-    {
-      id: 4,
-      title: 'Matemática Discreta',
-      description: 'Fundamentos matemáticos para computação',
-      icon: '📊',
-      progress: 25,
-      completed: 1,
-      total: 4,
-      category: 'base',
-      achievementIcon: '🥉'
-    },
-    {
-      id: 5,
-      title: 'Desenvolvimento Mobile',
-      description: 'React Native e desenvolvimento nativo',
-      icon: '📱',
-      progress: 0,
-      completed: 0,
-      total: 4,
-      category: 'tecnica',
-      achievementIcon: '🥉'
-    },
-    {
-      id: 6,
-      title: 'Algoritmos e Estruturas',
-      description: 'Complexidade e otimização de algoritmos',
-      icon: '⚙️',
-      progress: 0,
-      completed: 0,
-      total: 4,
-      category: 'base',
-      achievementIcon: '🥉'
-    }
-  ];
+  // Usar dados reais da API ou array vazio se ainda carregando
+  const trailsData = trails || [];
+  
+  // Debug
+  useEffect(() => {
+    console.log('🏠 HomeScreen: trails recebidas do context:', trails);
+    console.log('🏠 HomeScreen: trailsData:', trailsData);
+    console.log('🏠 HomeScreen: userStats:', userStats);
+    console.log('🏠 HomeScreen: loading:', loading);
+  }, [trails, trailsData, userStats, loading]);
 
-  const filteredTrails = trailsData.filter(trail => 
-    activeFilter === 'todas' || trail.category === activeFilter
-  );
+  const filteredTrails = trailsData.filter(trail => {
+    if (activeFilter === 'todas') return true;
+    // Mapear filtros para categorias corretas
+    const categoryMap = {
+      'base': 'Base',
+      'tecnica': 'Técnica'
+    };
+    return trail.category === categoryMap[activeFilter];
+  });
 
   const currentNews = newsData[currentNewsIndex];
 

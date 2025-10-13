@@ -1,12 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
+import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
+import { useTrails } from '../context/TrailContext';
+import { useAuth } from '../context/AuthContext';
+import BackButton from '../components/BackButton';
 
 export default function TrailDetailScreen({ route, navigation }) {
   const { trail } = route.params;
   const { colors, isDarkMode } = useTheme();
+  const { fetchTrailModules, updateModuleProgress } = useTrails();
+  const { token } = useAuth();
   const [selectedModule, setSelectedModule] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [moduleContents, setModuleContents] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [loadingContents, setLoadingContents] = useState(false);
+
+  const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
 
   const theme = useMemo(() => ({
     backgroundColor: colors.background,
@@ -22,44 +35,66 @@ export default function TrailDetailScreen({ route, navigation }) {
     bronze: '#CD7F32',
   }), [colors, isDarkMode]);
 
-  const modules = [
-    {
-      id: 1,
-      title: `${trail.title} I`,
-      description: 'Fundamentos e conceitos básicos',
-      resources: 12,
-      completed: true,
-      xp: 100,
-      badge: '🥇'
-    },
-    {
-      id: 2,
-      title: `${trail.title} II`,
-      description: 'Avançando nos conceitos',
-      resources: 15,
-      completed: trail.progress >= 50,
-      xp: 150,
-      badge: trail.progress >= 50 ? '🥈' : '🔒'
-    },
-    {
-      id: 3,
-      title: `${trail.title} III`,
-      description: 'Aplicações práticas',
-      resources: 18,
-      completed: trail.progress >= 75,
-      xp: 200,
-      badge: trail.progress >= 75 ? '🥉' : '🔒'
-    },
-    {
-      id: 4,
-      title: `${trail.title} IV`,
-      description: 'Projeto final e certificação',
-      resources: 25,
-      completed: trail.progress === 100,
-      xp: 300,
-      badge: trail.progress === 100 ? '🏆' : '🔒'
+  // Carregar módulos da trilha
+  useEffect(() => {
+    async function loadModules() {
+      setLoading(true);
+      const data = await fetchTrailModules(trail.id);
+      if (data) {
+        // Transformar dados da API para o formato esperado
+        const formattedModules = data.map((mod, idx) => {
+          return {
+            id: mod.id,
+            title: mod.title,
+            description: mod.description,
+            resources: mod.resources_count,
+            completed: mod.status === 'completed',
+            xp: mod.xp_reward,
+            is_locked: mod.is_locked,
+            status: mod.status
+          };
+        });
+        setModules(formattedModules);
+      }
+      setLoading(false);
     }
-  ];
+    loadModules();
+  }, [trail.id, fetchTrailModules]);
+
+  // Função para buscar conteúdos de um módulo
+  const loadModuleContents = async (moduleId) => {
+    if (moduleContents[moduleId]) return; // Já carregou
+    
+    try {
+      setLoadingContents(true);
+      const response = await axios.get(
+        `${apiUrl}/trails/modules/${moduleId}/contents`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        setModuleContents(prev => ({
+          ...prev,
+          [moduleId]: response.data.contents || []
+        }));
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar conteúdos:', error);
+      setModuleContents(prev => ({
+        ...prev,
+        [moduleId]: []
+      }));
+    } finally {
+      setLoadingContents(false);
+    }
+  };
+
+  // Carregar conteúdos quando selecionar um módulo
+  useEffect(() => {
+    if (selectedModule) {
+      loadModuleContents(selectedModule);
+    }
+  }, [selectedModule]);
 
   const getAchievementIcon = () => {
     if (trail.progress === 100) return '🏆';
@@ -77,6 +112,17 @@ export default function TrailDetailScreen({ route, navigation }) {
 
   const totalXP = modules.reduce((sum, module) => sum + (module.completed ? module.xp : 0), 0);
 
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={theme.primaryBlue} />
+          <Text style={[{ color: theme.textColor, marginTop: 16 }]}>Carregando módulos...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar
@@ -86,12 +132,7 @@ export default function TrailDetailScreen({ route, navigation }) {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: theme.cardBackground }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backIcon, { color: theme.textColor }]}>←</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={[styles.headerTitle, { color: theme.textColor }]}>Detalhes da Trilha</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -145,108 +186,180 @@ export default function TrailDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Modules Path */}
+        {/* Gamified Learning Path */}
         <View style={styles.modulesSection}>
-          <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Caminho de Aprendizado</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textColor }]}>🗺️ Mapa de Aprendizado</Text>
           
-          <View style={styles.modulesContainer}>
-            {modules.map((module, index) => (
-              <View key={module.id} style={styles.moduleItem}>
-                {/* Connection Line */}
-                {index < modules.length - 1 && (
-                  <View style={[
-                    styles.connectionLine,
-                    { backgroundColor: module.completed ? theme.successGreen : theme.textColor + '30' }
-                  ]} />
-                )}
-                
-                {/* Module Card */}
-                <TouchableOpacity
-                  style={[
-                    styles.moduleCard,
-                    { backgroundColor: theme.cardBackground },
-                    module.completed && styles.moduleCompleted
-                  ]}
-                  onPress={() => setSelectedModule(selectedModule === module.id ? null : module.id)}
-                >
-                  <View style={styles.moduleHeader}>
-                    <View style={[
-                      styles.moduleStatus,
-                      { backgroundColor: module.completed ? theme.successGreen : theme.textColor + '30' }
-                    ]}>
-                      <Text style={styles.statusIcon}>
-                        {module.completed ? '✓' : '○'}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.moduleInfo}>
-                      <Text style={[styles.moduleTitle, { color: theme.textColor }]}>
-                        {module.title}
-                      </Text>
-                      <Text style={[styles.moduleDescription, { color: theme.textColor + '88' }]}>
-                        {module.description}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.moduleBadge}>
-                      <Text style={styles.badgeIcon}>{module.badge}</Text>
-                    </View>
-                  </View>
-
-                  {/* Expanded Content */}
-                  {selectedModule === module.id && (
-                    <View style={styles.moduleExpanded}>
-                      <View style={styles.moduleStats}>
-                        <View style={styles.statItem}>
-                          <Text style={styles.statIcon}>📚</Text>
-                          <Text style={[styles.statText, { color: theme.textColor }]}>
-                            {module.resources} recursos
-                          </Text>
+          <View style={styles.gamifiedPath}>
+            {modules.map((module, index) => {
+              const isNextModule = !module.completed && (index === 0 || modules[index - 1]?.completed);
+              
+              return (
+                <View key={module.id} style={styles.pathRow}>
+                  {/* Module Card */}
+                  <TouchableOpacity
+                    style={[
+                      styles.gameModuleCard,
+                      { 
+                        backgroundColor: theme.cardBackground,
+                        borderColor: module.completed 
+                          ? theme.successGreen 
+                          : isNextModule 
+                            ? theme.primaryBlue 
+                            : theme.textColor + '20'
+                      }
+                    ]}
+                    onPress={() => setSelectedModule(selectedModule === module.id ? null : module.id)}
+                    disabled={!module.completed && !isNextModule}
+                    activeOpacity={0.7}
+                  >
+                      <View style={styles.cardContent}>
+                        <View style={styles.cardHeader}>
+                          <View style={styles.levelInfo}>
+                            <Text style={[styles.moduleNumber, { color: theme.textColor }]}>
+                              Nível {index + 1}
+                            </Text>
+                            <Text style={[styles.gameModuleTitle, { color: theme.textColor }]}>
+                              {module.title}
+                            </Text>
+                          </View>
+                          <View style={styles.medalContainer}>
+                            <Text style={styles.cardMedalEmoji}>
+                              {index === 0 ? '🥉' : index === 1 ? '🥈' : index === 2 ? '🥇' : '🏆'}
+                            </Text>
+                          </View>
                         </View>
-                        <View style={styles.statItem}>
-                          <Text style={styles.statIcon}>⭐</Text>
-                          <Text style={[styles.statText, { color: theme.textColor }]}>
-                            {module.xp} XP
+                        <Text style={[styles.gameModuleDesc, { color: theme.textColor + '88' }]}>
+                          {module.description}
+                        </Text>
+                        
+                        {/* XP and Resources */}
+                        <View style={styles.cardStats}>
+                          <View style={styles.cardStat}>
+                            <Text style={styles.cardStatIcon}>⭐</Text>
+                            <Text style={[styles.cardStatText, { color: theme.textColor }]}>
+                              {module.xp} XP
+                            </Text>
+                          </View>
+                          <View style={styles.cardStat}>
+                            <Text style={styles.cardStatIcon}>📚</Text>
+                            <Text style={[styles.cardStatText, { color: theme.textColor }]}>
+                              {module.resources} itens
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Status Badge */}
+                        <View style={[
+                          styles.statusBadge,
+                          { 
+                            backgroundColor: module.completed 
+                              ? theme.successGreen + '20' 
+                              : isNextModule 
+                                ? theme.primaryBlue + '20' 
+                                : theme.textColor + '10'
+                          }
+                        ]}>
+                          <Text style={[
+                            styles.statusBadgeText,
+                            { 
+                              color: module.completed 
+                                ? theme.successGreen 
+                                : isNextModule 
+                                  ? theme.primaryBlue 
+                                  : theme.textColor + '60'
+                            }
+                          ]}>
+                            {module.completed ? '✓ Concluído' : isNextModule ? '▶ Disponível' : '🔒 Bloqueado'}
                           </Text>
                         </View>
                       </View>
-                      
-                      <TouchableOpacity
-                        style={[
-                          styles.actionButton,
-                          { backgroundColor: module.completed ? theme.successGreen : theme.primaryBlue }
-                        ]}
-                      >
-                        <Text style={styles.actionIcon}>📖</Text>
-                        <Text style={styles.actionText}>
-                          {module.completed ? 'Revisar Conteúdos' : 'Iniciar Módulo'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </View>
 
-        {/* Achievement Section */}
-        <View style={[styles.achievementSection, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Conquistas</Text>
-          <View style={styles.achievementsGrid}>
-            {modules.map((module, index) => (
-              <View key={module.id} style={styles.achievementItem}>
-                <View style={[
-                  styles.achievementCircle,
-                  { backgroundColor: module.completed ? theme.successGreen : theme.textColor + '20' }
-                ]}>
-                  <Text style={styles.achievementNumber}>{index + 1}</Text>
+                      {/* Expanded Content */}
+                      {selectedModule === module.id && (
+                        <View style={styles.expandedActions}>
+                          <View style={[styles.divider, { backgroundColor: theme.textColor + '15' }]} />
+                          
+                          {/* Conteúdos Disponíveis */}
+                          <View style={styles.contentsSection}>
+                            <Text style={[styles.contentsSectionTitle, { color: theme.textColor }]}>
+                              📚 Conteúdos Disponíveis
+                            </Text>
+                            
+                            {loadingContents ? (
+                              <ActivityIndicator size="small" color={theme.primaryBlue} style={{ marginVertical: 10 }} />
+                            ) : moduleContents[module.id] && moduleContents[module.id].length > 0 ? (
+                              <View style={styles.contentsList}>
+                                {moduleContents[module.id].map((content, idx) => (
+                                  <TouchableOpacity 
+                                    key={content.id}
+                                    style={[styles.contentItem, { backgroundColor: isDarkMode ? '#334155' : '#f8f9fa' }]}
+                                  >
+                                    <Text style={styles.contentTypeIcon}>
+                                      {content.content_type === 'resumo' ? '📄' : '🗺️'}
+                                    </Text>
+                                    <View style={styles.contentInfo}>
+                                      <Text style={[styles.contentTitle, { color: theme.textColor }]}>
+                                        {content.title}
+                                      </Text>
+                                      <Text style={[styles.contentAuthor, { color: theme.textColor + '88' }]}>
+                                        por {content.author_name}
+                                      </Text>
+                                    </View>
+                                    <Text style={[styles.contentArrow, { color: theme.primaryBlue }]}>→</Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </View>
+                            ) : (
+                              <View style={[styles.emptyContent, { backgroundColor: isDarkMode ? '#334155' : '#f8f9fa' }]}>
+                                <Text style={styles.emptyIcon}>📭</Text>
+                                <Text style={[styles.emptyText, { color: theme.textColor + '88' }]}>
+                                  Nenhum conteúdo aprovado ainda
+                                </Text>
+                                <Text style={[styles.emptySubtext, { color: theme.textColor + '66' }]}>
+                                  Seja o primeiro a contribuir!
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          
+                          <TouchableOpacity
+                            style={[
+                              styles.primaryActionButton,
+                              { backgroundColor: module.completed ? theme.successGreen : theme.primaryBlue }
+                            ]}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                              navigation.navigate('ModuleContent', {
+                                module: {
+                                  ...module,
+                                  index: index
+                                },
+                                trailTitle: trail.title
+                              });
+                            }}
+                          >
+                            <Text style={styles.actionIcon}>
+                              {module.completed ? '🔄' : '🚀'}
+                            </Text>
+                            <Text style={styles.actionText}>
+                              {module.completed ? 'Revisar Módulo' : 'Começar Agora'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </TouchableOpacity>
                 </View>
-                <Text style={[styles.achievementText, { color: theme.textColor }]}>
-                  {module.completed ? 'Concluído' : 'Bloqueado'}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
+            
+            {/* Finish Flag */}
+            <View style={styles.finishFlag}>
+              <Text style={styles.flagIcon}>🏁</Text>
+              <Text style={[styles.flagText, { color: theme.textColor }]}>
+                {trail.progress === 100 ? 'Trilha Completa!' : 'Destino Final'}
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -264,19 +377,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-  },
-  backButton: {
-    padding: 12,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
   },
   headerTitle: {
     fontSize: 18,
@@ -398,143 +498,189 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  modulesContainer: {
+  gamifiedPath: {
     position: 'relative',
+    paddingVertical: 10,
+    overflow: 'visible',
   },
-  moduleItem: {
-    position: 'relative',
+  pathRow: {
     marginBottom: 20,
   },
-  connectionLine: {
-    position: 'absolute',
-    left: 20,
-    top: 50,
-    width: 2,
-    height: 40,
-    zIndex: 1,
-  },
-  moduleCard: {
+  gameModuleCard: {
+    width: '100%',
     borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  moduleCompleted: {
+    padding: 16,
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 2,
+    overflow: 'hidden',
   },
-  moduleHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  moduleStatus: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  statusIcon: {
-    fontSize: 20,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  moduleInfo: {
-    flex: 1,
-  },
-  moduleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  moduleDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  moduleBadge: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeIcon: {
-    fontSize: 24,
-  },
-  moduleExpanded: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  moduleStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 15,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  statText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+  cardContent: {
     gap: 8,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  levelInfo: {
+    flex: 1,
+  },
+  medalContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  cardMedalEmoji: {
+    fontSize: 32,
+    textAlign: 'center',
+  },
+  moduleNumber: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    opacity: 0.6,
+  },
+  gameModuleTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  gameModuleDesc: {
+    fontSize: 14,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  cardStats: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 4,
+  },
+  cardStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  cardStatIcon: {
+    fontSize: 14,
+  },
+  cardStatText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  expandedActions: {
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  divider: {
+    height: 1,
+    marginBottom: 12,
+    borderRadius: 1,
+  },
+  primaryActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 10,
+    minHeight: 48,
+  },
   actionIcon: {
-    fontSize: 16,
+    fontSize: 18,
+    textAlign: 'center',
   },
   actionText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
   },
-  achievementSection: {
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  achievementsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  achievementItem: {
+  finishFlag: {
     alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
   },
-  achievementCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
+  flagIcon: {
+    fontSize: 48,
     marginBottom: 8,
   },
-  achievementNumber: {
+  flagText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
   },
-  achievementText: {
-    fontSize: 12,
+  contentsSection: {
+    marginBottom: 16,
+  },
+  contentsSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  contentsList: {
+    gap: 8,
+  },
+  contentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  contentTypeIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  contentInfo: {
+    flex: 1,
+  },
+  contentTitle: {
+    fontSize: 14,
     fontWeight: '600',
+    marginBottom: 2,
+  },
+  contentAuthor: {
+    fontSize: 12,
+  },
+  contentArrow: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  emptyContent: {
+    padding: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 12,
     textAlign: 'center',
   },
 });

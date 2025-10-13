@@ -5,6 +5,7 @@ export interface User {
   matricula: string;
   password_hash: string;
   role: 'student' | 'professor';
+  course?: 'Informática' | 'Meio Ambiente' | 'Produção Cultural' | 'Mecânica';
   created_at?: Date;
   updated_at?: Date;
 }
@@ -14,6 +15,7 @@ export interface CreateUserRequest {
   email: string;
   registryId: string;
   password: string;
+  course?: 'Informática' | 'Meio Ambiente' | 'Produção Cultural' | 'Mecânica';
 }
 
 export interface LoginRequest {
@@ -28,6 +30,7 @@ export interface AuthResponse {
 
 export interface JWTPayload {
   sub: number;
+  id?: number;
   email: string;
   role: 'student' | 'professor';
   iat?: number;

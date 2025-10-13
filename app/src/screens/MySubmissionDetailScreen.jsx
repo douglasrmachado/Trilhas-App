@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import BackButton from '../components/BackButton';
 
 export default function MySubmissionDetailScreen({ navigation, route }) {
   const { submission } = route.params;
@@ -96,8 +97,8 @@ export default function MySubmissionDetailScreen({ navigation, route }) {
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-        <View style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.headerText }]}>← Voltar</Text>
+        <View style={styles.backButtonContainer}>
+          <BackButton onPress={() => navigation.goBack()} />
         </View>
         
         <View style={styles.headerCenter}>
@@ -275,12 +276,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
+  backButtonContainer: {
     flex: 1,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
   },
   headerCenter: {
     flex: 2,

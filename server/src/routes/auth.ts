@@ -13,7 +13,8 @@ const authService = new AuthService();
  * @access  Public
  */
 router.post('/register', asyncHandler(async (req: Request, res: Response) => {
-  console.log('📝 Tentativa de cadastro recebida:', { email: req.body?.email, name: req.body?.name });
+  console.log('📝 Tentativa de cadastro recebida:', { email: req.body?.email, name: req.body?.name, course: req.body?.course });
+  console.log('📝 Body completo:', JSON.stringify(req.body));
   
   const data = registerSchema.parse(req.body);
   console.log('✅ Dados validados:', { email: data.email, name: data.name, registryId: data.registryId });

@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../config/api';
+import BackButton from '../components/BackButton';
 
 export default function MySubmissionsScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
@@ -218,12 +219,7 @@ export default function MySubmissionsScreen({ navigation }) {
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.headerText }]}>← Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
           <Text style={styles.headerIcon}>📋</Text>
@@ -286,13 +282,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    flex: 1,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
   },
   headerCenter: {
     flex: 2,

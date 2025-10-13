@@ -139,9 +139,50 @@ export class SubmissionService {
     feedback?: string,
     reviewedBy?: number
   ): Promise<void> {
+    // Se for aprovação, associar ao módulo correto
+    let moduleId = null;
+    
+    if (status === 'approved') {
+      // Buscar dados da submissão
+      const [subRows] = await pool.query(
+        'SELECT subject, year FROM submissions WHERE id = ?',
+        [submissionId]
+      );
+      const submission = (subRows as any[])[0];
+      
+      if (submission) {
+        // Mapear ano para order_index do módulo
+        const yearToModuleMap: { [key: string]: number } = {
+          '1º': 1,
+          '2º': 2,
+          '3º': 3,
+          '4º': 4
+        };
+        
+        const moduleOrder = yearToModuleMap[submission.year];
+        
+        if (moduleOrder) {
+          // Buscar o módulo correspondente
+          const [moduleRows] = await pool.query(`
+            SELECT m.id 
+            FROM modules m
+            INNER JOIN trails t ON t.id = m.trail_id
+            WHERE t.title = ? AND m.order_index = ?
+            LIMIT 1
+          `, [submission.subject, moduleOrder]);
+          
+          if (Array.isArray(moduleRows) && moduleRows.length > 0) {
+            moduleId = (moduleRows[0] as any).id;
+            console.log(`✅ Submissão aprovada associada ao módulo ${moduleId}`);
+          }
+        }
+      }
+    }
+    
+    // Atualizar submissão
     await pool.query(
-      'UPDATE submissions SET status = ?, feedback = ?, reviewed_by = ?, reviewed_at = NOW(), updated_at = NOW() WHERE id = ?',
-      [status, feedback || null, reviewedBy || null, submissionId]
+      'UPDATE submissions SET status = ?, module_id = ?, feedback = ?, reviewed_by = ?, reviewed_at = NOW(), updated_at = NOW() WHERE id = ?',
+      [status, moduleId, feedback || null, reviewedBy || null, submissionId]
     );
 
     // Criar notificação para o autor da submissão
@@ -151,7 +192,8 @@ export class SubmissionService {
       const notif = new NotificationService();
       const title = status === 'approved' ? 'Submissão aprovada' : 'Submissão rejeitada';
       const body = `Seu conteúdo "${sub.title}" foi ${status === 'approved' ? 'aprovado' : 'rejeitado'}.`;
-      await notif.create(sub.user_id, 'submission_reviewed', title, body);
+      const notificationType = status === 'approved' ? 'submission_approved' : 'submission_rejected';
+      await notif.create(sub.user_id, notificationType, title, body);
     }
   }
 

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import Constants from 'expo-constants';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import BackButton from '../components/BackButton';
 
 export default function CreateProfessorScreen({ navigation }) {
   const { token } = useAuth();

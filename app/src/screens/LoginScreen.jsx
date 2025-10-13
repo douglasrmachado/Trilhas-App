@@ -19,6 +19,9 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
   const [name, setName] = useState('');
   const [registryId, setRegistryId] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [course, setCourse] = useState('');
+  
+  const courses = ['Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica'];
   
   const { login } = useAuth();
   const { colors, isDarkMode, toggle } = useTheme();
@@ -41,6 +44,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
       setName('');
       setRegistryId('');
       setConfirmPassword('');
+      setCourse('');
       setActiveTab('login');
     }, [])
   );
@@ -51,6 +55,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
       setName('');
       setRegistryId('');
       setConfirmPassword('');
+      setCourse('');
     } else if (activeTab === 'register') {
       setPassword('');
     }
@@ -79,6 +84,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
         setName('');
         setRegistryId('');
         setConfirmPassword('');
+        setCourse('');
         
         // A navegação agora é automática baseada no estado de autenticação
         // Não é mais necessário navegar manualmente
@@ -99,8 +105,8 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
 
   const handleRegister = useCallback(async () => {
     try {
-      if (!name || !email || !registryId || !password || !confirmPassword) {
-        Alert.alert('Atenção', 'Preencha todos os campos');
+      if (!name || !email || !registryId || !password || !confirmPassword || !course) {
+        Alert.alert('Atenção', 'Preencha todos os campos, incluindo o curso');
         return;
       }
 
@@ -116,6 +122,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
         email,
         registryId,
         password,
+        course,
       });
       
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
@@ -129,6 +136,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
             setName('');
             setRegistryId('');
             setConfirmPassword('');
+            setCourse('');
           }
         }
       ]);
@@ -145,7 +153,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }, [name, email, registryId, password, confirmPassword, apiUrl]);
+  }, [name, email, registryId, password, confirmPassword, course, apiUrl]);
 
 
   return (
@@ -301,6 +309,32 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
                       placeholderTextColor={themed.text + '66'}
                       style={[styles.input, { borderColor: themed.inputBorder, color: themed.text, backgroundColor: isDarkMode ? '#334155' : '#fff' }]}
                     />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: themed.text }]}>Curso</Text>
+                    <View style={styles.coursesGrid}>
+                      {courses.map((c) => (
+                        <TouchableOpacity
+                          key={c}
+                          style={[
+                            styles.courseButton,
+                            { 
+                              borderColor: course === c ? '#1e90ff' : themed.inputBorder,
+                              backgroundColor: course === c ? (isDarkMode ? '#1e3a8a' : '#e6f3ff') : (isDarkMode ? '#334155' : '#fff')
+                            }
+                          ]}
+                          onPress={() => setCourse(c)}
+                        >
+                          <Text style={[
+                            styles.courseButtonText,
+                            { color: course === c ? '#1e90ff' : themed.text }
+                          ]}>
+                            {c}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   </View>
 
                   <View style={styles.inputGroup}>
@@ -520,6 +554,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1e90ff',
+  },
+  coursesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  courseButton: {
+    width: '48%',
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  courseButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

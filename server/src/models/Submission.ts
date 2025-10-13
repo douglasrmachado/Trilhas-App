@@ -3,6 +3,7 @@ export interface Submission {
   user_id: number;
   title: string;
   subject: string;
+  module_id?: number;
   year: string;
   content_type: 'resumo' | 'mapa' | 'exercicio' | 'apresentacao';
   description: string;

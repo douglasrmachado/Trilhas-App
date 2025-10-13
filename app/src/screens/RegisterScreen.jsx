@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
 import PasswordInput from '../components/PasswordInput';
+import BackButton from '../components/BackButton';
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -12,8 +13,11 @@ export default function RegisterScreen({ navigation }) {
   const [registryId, setRegistryId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [course, setCourse] = useState('');
   const [loading, setLoading] = useState(false);
   const { colors, isDarkMode, toggle } = useTheme();
+
+  const courses = ['Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica'];
 
   const themed = useMemo(() => ({
     background: colors.background,
@@ -27,15 +31,19 @@ export default function RegisterScreen({ navigation }) {
   async function handleRegister() {
     try {
       setLoading(true);
-      if (!name || !email || !registryId || !password || !confirmPassword) {
-        Alert.alert('Atenção', 'Preencha todos os campos');
+      console.log('🔍 Dados do formulário:', { name, email, registryId, course });
+      
+      if (!name || !email || !registryId || !password || !confirmPassword || !course) {
+        Alert.alert('Atenção', 'Preencha todos os campos, incluindo o curso');
         return;
       }
       if (password !== confirmPassword) {
         Alert.alert('Atenção', 'As senhas não conferem');
         return;
       }
-      await axios.post(`${apiUrl}/auth/register`, { name, email, registryId, password });
+      
+      console.log('📤 Enviando cadastro com curso:', course);
+      await axios.post(`${apiUrl}/auth/register`, { name, email, registryId, password, course });
       Alert.alert('Sucesso', 'Cadastro realizado. Faça login.');
       navigation.replace('Login');
     } catch (error) {
@@ -49,12 +57,7 @@ export default function RegisterScreen({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themed.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backText, { color: themed.text }]}>← Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <TouchableOpacity
           style={[styles.themeButton, { backgroundColor: themed.text + '20' }]}
           onPress={() => toggle()}
@@ -75,6 +78,34 @@ export default function RegisterScreen({ navigation }) {
           <TextInput placeholder="Nome" value={name} onChangeText={setName} placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
           <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
           <TextInput placeholder="N° de matrícula" value={registryId} onChangeText={setRegistryId} autoCapitalize="none" keyboardType="numeric" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+          
+          {/* Seletor de Curso */}
+          <View style={styles.courseContainer}>
+            <Text style={[styles.courseLabel, { color: themed.text }]}>Selecione seu curso:</Text>
+            <View style={styles.coursesGrid}>
+              {courses.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.courseButton,
+                    { 
+                      borderColor: course === c ? themed.buttonBg : themed.inputBorder,
+                      backgroundColor: course === c ? themed.buttonBg + '20' : 'transparent'
+                    }
+                  ]}
+                  onPress={() => setCourse(c)}
+                >
+                  <Text style={[
+                    styles.courseButtonText,
+                    { color: course === c ? themed.buttonBg : themed.text }
+                  ]}>
+                    {c}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <PasswordInput placeholder="Senha" value={password} onChangeText={setPassword} placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
           <PasswordInput placeholder="Confirmar senha" value={confirmPassword} onChangeText={setConfirmPassword} placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
           <TouchableOpacity style={[styles.button, { backgroundColor: themed.buttonBg }]} onPress={handleRegister} disabled={loading}>
@@ -98,14 +129,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 5,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   themeButton: {
     padding: 12,
@@ -154,6 +177,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  courseContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  courseLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  coursesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  courseButton: {
+    width: '48%',
+    borderWidth: 2,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  courseButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

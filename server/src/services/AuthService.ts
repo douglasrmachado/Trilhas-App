@@ -8,7 +8,7 @@ export class AuthService {
    * Registra um novo usuário (estudante)
    */
   async registerStudent(userData: CreateUserRequest): Promise<void> {
-    const { name, email, registryId, password } = userData;
+    const { name, email, registryId, password, course } = userData;
     
     // Verificar se email ou matrícula já existem
     const [existingRows] = await pool.query(
@@ -24,10 +24,10 @@ export class AuthService {
     // Hash da senha
     const passwordHash = await bcrypt.hash(password, 10);
     
-    // Inserir usuário como estudante
+    // Inserir usuário como estudante (curso é obrigatório para estudantes)
     await pool.query(
-      'INSERT INTO users (name, email, matricula, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-      [name, email, registryId, passwordHash, 'student']
+      'INSERT INTO users (name, email, matricula, password_hash, role, course) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, registryId, passwordHash, 'student', course]
     );
   }
 
@@ -66,7 +66,7 @@ export class AuthService {
     
     // Buscar usuário por email
     const [rows] = await pool.query(
-      'SELECT id, name, email, role, profile_photo, bio, cover_photo, password_hash FROM users WHERE email = ?',
+      'SELECT id, name, email, role, course, profile_photo, bio, cover_photo, password_hash FROM users WHERE email = ?',
       [email]
     );
     const users = Array.isArray(rows) ? rows : [];

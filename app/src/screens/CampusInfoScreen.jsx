@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useTheme } from '../context/ThemeContext';
+import BackButton from '../components/BackButton';
 
 const { width } = Dimensions.get('window');
 
@@ -90,13 +91,7 @@ export default function CampusInfoScreen({ navigation }) {
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.textColor + '20' }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backIcon, { color: theme.textColor }]}>←</Text>
-          <Text style={[styles.backText, { color: theme.textColor }]}>Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
           <Text style={styles.headerIcon}>📢</Text>
@@ -250,19 +245,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   headerCenter: {
     flexDirection: 'row',

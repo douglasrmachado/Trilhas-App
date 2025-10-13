@@ -4,13 +4,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useTrails } from '../context/TrailContext';
+import BackButton from '../components/BackButton';
 
 export default function ProfileScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
-  const { user, updateProfilePhoto } = useAuth();
+  const { user, updateProfilePhoto, updateProfile } = useAuth();
+  const { userStats } = useTrails();
   const [isLoading, setIsLoading] = useState(false);
 
-  const selectImage = async () => {
+  const selectProfileImage = async () => {
     try {
       setIsLoading(true);
       
@@ -42,6 +45,38 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const selectCoverImage = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Solicitar permissão para acessar a galeria
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de permissão para acessar sua galeria de fotos.');
+        return;
+      }
+
+      // Abrir seletor de imagem
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        await updateProfile({ cover_photo: imageUri });
+        Alert.alert('Sucesso', 'Foto de capa atualizada com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem de capa:', error);
+      Alert.alert('Erro', 'Não foi possível atualizar a foto de capa.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const theme = {
     backgroundColor: colors.background,
     textColor: colors.text,
@@ -63,21 +98,21 @@ export default function ProfileScreen({ navigation }) {
   const stats = [
     {
       id: 1,
-      value: '125',
+      value: userStats?.total_xp?.toString() || '0',
       label: 'Pontos',
       color: theme.primaryBlue,
       backgroundColor: theme.statsBgBlue,
     },
     {
       id: 2,
-      value: '2',
-      label: 'Aprovados',
+      value: userStats?.completed_modules?.toString() || '0',
+      label: 'Módulos',
       color: theme.successGreen,
       backgroundColor: theme.statsBgGreen,
     },
     {
       id: 3,
-      value: '2',
+      value: userStats?.achievements_count?.toString() || '0',
       label: 'Conquistas',
       color: theme.warningOrange,
       backgroundColor: theme.statsBgOrange,
@@ -94,13 +129,7 @@ export default function ProfileScreen({ navigation }) {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backIcon, { color: theme.textColor }]}>←</Text>
-          <Text style={[styles.backText, { color: theme.textColor }]}>Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={[styles.headerTitle, { color: theme.textColor }]}>Meu Perfil</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -121,7 +150,7 @@ export default function ProfileScreen({ navigation }) {
             )}
             <TouchableOpacity 
               style={styles.coverCameraBadge}
-              onPress={selectImage}
+              onPress={selectCoverImage}
               disabled={isLoading}
             >
               <Text style={styles.coverCameraIcon}>📷</Text>
@@ -132,7 +161,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.profilePictureContainer}>
             <TouchableOpacity 
               style={[styles.profilePicture, { backgroundColor: theme.primaryBlue }]}
-              onPress={selectImage}
+              onPress={selectProfileImage}
               disabled={isLoading}
             >
               {user?.profile_photo ? (
@@ -168,7 +197,9 @@ export default function ProfileScreen({ navigation }) {
             <Text style={[styles.userName, { color: theme.textColor }]}>
               {user?.name || 'Usuário'}
             </Text>
-            <Text style={[styles.userRole, { color: theme.textColor + '88' }]}>Estudante</Text>
+            <Text style={[styles.userRole, { color: theme.textColor + '88' }]}>
+              {user?.course ? `Estudante - ${user.course}` : 'Estudante'}
+            </Text>
             {user?.bio ? (
               <Text style={[styles.bioText, { color: theme.textColor + '88' }]}>
                 {user.bio}
@@ -214,19 +245,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 20,

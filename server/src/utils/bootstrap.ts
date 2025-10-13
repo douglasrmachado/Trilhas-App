@@ -79,6 +79,7 @@ async function ensureSubmissionsTable() {
           user_id INT UNSIGNED NOT NULL,
           title VARCHAR(255) NOT NULL,
           subject VARCHAR(100) NOT NULL,
+          module_id INT UNSIGNED NULL,
           year VARCHAR(50) NOT NULL,
           content_type ENUM('resumo', 'mapa', 'exercicio', 'apresentacao') NOT NULL DEFAULT 'resumo',
           description TEXT NOT NULL,
@@ -92,6 +93,7 @@ async function ensureSubmissionsTable() {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
           INDEX idx_user_id (user_id),
           INDEX idx_status (status),
+          INDEX idx_module_id (module_id),
           INDEX idx_created_at (created_at)
         )
       `);

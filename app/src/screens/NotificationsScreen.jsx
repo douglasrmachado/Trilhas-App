@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import Constants from 'expo-constants';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import BackButton from '../components/BackButton';
 
 export default function NotificationsScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
@@ -27,7 +28,7 @@ export default function NotificationsScreen({ navigation }) {
       const items = response?.data?.items || [];
       setNotifications(items.map((n) => ({
         id: String(n.id),
-        icon: n.type === 'submission_reviewed' ? '✅' : '📝',
+        icon: n.type === 'submission_approved' ? '✅' : n.type === 'submission_rejected' ? '❌' : '📝',
         title: n.title,
         subtitle: n.body || '',
       })));
@@ -60,10 +61,7 @@ export default function NotificationsScreen({ navigation }) {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={themed.background} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={[styles.backIcon, { color: themed.text }]}>←</Text>
-          <Text style={[styles.backText, { color: themed.text }]}>Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={[styles.headerTitle, { color: themed.text }]}>Notificações</Text>
         <TouchableOpacity style={styles.clearButton} onPress={clearAll} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <Text style={styles.clearIcon}>🗑️</Text>
@@ -103,9 +101,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  backButton: { flexDirection: 'row', alignItems: 'center' },
-  backIcon: { fontSize: 20, fontWeight: 'bold', marginRight: 8 },
-  backText: { fontSize: 16, fontWeight: '600' },
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
   clearButton: { flexDirection: 'row', alignItems: 'center' },
   clearIcon: { fontSize: 14, marginRight: 6 },

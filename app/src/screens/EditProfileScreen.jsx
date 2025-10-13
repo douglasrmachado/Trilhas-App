@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import BackButton from '../components/BackButton';
 
 export default function EditProfileScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
@@ -41,10 +42,7 @@ export default function EditProfileScreen({ navigation }) {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={themed.background} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={[styles.backIcon, { color: themed.text }]}>←</Text>
-          <Text style={[styles.backText, { color: themed.text }]}>Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={[styles.headerTitle, { color: themed.text }]}>Editar Perfil</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -94,19 +92,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 20,

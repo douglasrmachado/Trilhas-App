@@ -7,7 +7,10 @@ const router = Router();
 const service = new NotificationService();
 
 router.get('/', requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Não autenticado' });
+  }
   const onlyUnread = req.query.onlyUnread === 'true';
   const limit = Math.min(Number(req.query.limit || 50), 100);
   const offset = Number(req.query.offset || 0);
@@ -16,13 +19,19 @@ router.get('/', requireAuth, asyncHandler(async (req: Request, res: Response) =>
 }));
 
 router.get('/count', requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Não autenticado' });
+  }
   const count = await service.countUnread(userId);
   res.json({ success: true, count });
 }));
 
 router.post('/clear', requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Não autenticado' });
+  }
   await service.markAllRead(userId);
   res.json({ success: true });
 }));

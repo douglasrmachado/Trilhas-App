@@ -14,12 +14,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useTrails } from '../context/TrailContext';
 import { getApiUrl, testApiConnection } from '../config/api';
 import * as DocumentPicker from 'expo-document-picker';
+import BackButton from '../components/BackButton';
 
 export default function SubmitContentScreen({ navigation }) {
   const { colors, isDarkMode } = useTheme();
   const { token, user } = useAuth();
+  const { trails } = useTrails();
   const [loading, setLoading] = useState(false);
   
   // Estados do formulário
@@ -50,22 +53,32 @@ export default function SubmitContentScreen({ navigation }) {
     headerText: colors.text,
   }), [colors, isDarkMode]);
 
-  // Opções para os dropdowns
-  const subjects = [
-    'Matemática', 'Física', 'Química', 'Biologia', 'História', 
-    'Geografia', 'Português', 'Inglês', 'Filosofia', 'Sociologia'
-  ];
+  // Opções para os dropdowns - incluindo matérias do curso do usuário
+  const subjects = useMemo(() => {
+    // Matérias base padrão
+    const baseSubjects = [
+      'Matemática', 'Física', 'Química', 'Biologia', 'História', 
+      'Geografia', 'Português', 'Inglês', 'Filosofia', 'Sociologia',
+      'Artes', 'Educação Física'
+    ];
+    
+    // Adicionar trilhas do usuário (técnicas e base)
+    const userTrails = trails?.map(trail => trail.title) || [];
+    
+    // Combinar e remover duplicatas
+    const allSubjects = [...new Set([...baseSubjects, ...userTrails])];
+    
+    // Ordenar alfabeticamente
+    return allSubjects.sort((a, b) => a.localeCompare(b));
+  }, [trails]);
 
   const years = [
-    '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
-    '6º Ano', '7º Ano', '8º Ano', '9º Ano', 'Ensino Médio'
+    '1º', '2º', '3º', '4º'
   ];
 
   const contentTypes = [
     { id: 'resumo', name: 'Resumo', icon: '📄' },
     { id: 'mapa', name: 'Mapa Conceitual', icon: '🗺️' },
-    { id: 'exercicio', name: 'Exercícios', icon: '📝' },
-    { id: 'apresentacao', name: 'Apresentação', icon: '📊' },
   ];
 
   const handleInputChange = (field, value) => {
@@ -134,23 +147,33 @@ export default function SubmitContentScreen({ navigation }) {
       console.log('📝 Enviando submissão:', formData);
       
       // Preparar dados para envio
-      const submissionData = {
-        title: formData.title,
-        subject: formData.subject,
-        year: formData.year,
-        contentType: formData.contentType,
-        description: formData.description,
-        keywords: formData.keywords || undefined,
-      };
+      const submissionData = new FormData();
+      submissionData.append('title', formData.title);
+      submissionData.append('subject', formData.subject);
+      submissionData.append('year', formData.year);
+      submissionData.append('contentType', formData.contentType);
+      submissionData.append('description', formData.description);
+      if (formData.keywords) {
+        submissionData.append('keywords', formData.keywords);
+      }
+      
+      // Adicionar arquivo se houver
+      if (selectedFile) {
+        submissionData.append('file', {
+          uri: selectedFile.uri,
+          type: 'application/pdf',
+          name: selectedFile.name || 'documento.pdf',
+        });
+      }
 
       // Enviar para o backend
       const response = await fetch(`${apiUrl}/submissions`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          // Não definir Content-Type - deixar o fetch definir automaticamente para FormData
         },
-        body: JSON.stringify(submissionData),
+        body: submissionData,
       });
 
       const result = await response.json();
@@ -201,20 +224,26 @@ export default function SubmitContentScreen({ navigation }) {
           backgroundColor: theme.cardBg,
           borderColor: theme.borderColor 
         }]}>
-          {options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.dropdownItem}
-              onPress={() => {
-                onSelect(option);
-                onToggle();
-              }}
-            >
-              <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <ScrollView 
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+            style={styles.dropdownScrollView}
+          >
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  onSelect(option);
+                  onToggle();
+                }}
+              >
+                <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -229,16 +258,14 @@ export default function SubmitContentScreen({ navigation }) {
         }]}
         onPress={onToggle}
       >
-        <View style={styles.contentTypeRow}>
-          {selectedValue && (
-            <Text style={styles.contentTypeIcon}>
-              {options.find(opt => opt.name === selectedValue)?.icon || '📄'}
-            </Text>
-          )}
-          <Text style={[styles.dropdownText, { color: theme.textColor }]}>
-            {selectedValue || placeholder}
+        {selectedValue && (
+          <Text style={styles.contentTypeIcon}>
+            {options.find(opt => opt.name === selectedValue)?.icon || '📄'}
           </Text>
-        </View>
+        )}
+        <Text style={[styles.dropdownText, { color: theme.textColor }]}>
+          {selectedValue || placeholder}
+        </Text>
         <Text style={[styles.dropdownArrow, { color: theme.textColor }]}>
           {isOpen ? '▲' : '▼'}
         </Text>
@@ -249,23 +276,29 @@ export default function SubmitContentScreen({ navigation }) {
           backgroundColor: theme.cardBg,
           borderColor: theme.borderColor 
         }]}>
-          {options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.dropdownItem}
-              onPress={() => {
-                onSelect(option.name);
-                onToggle();
-              }}
-            >
-              <View style={styles.contentTypeRow}>
-                <Text style={styles.contentTypeIcon}>{option.icon}</Text>
-                <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>
-                  {option.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          <ScrollView 
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+            style={styles.dropdownScrollView}
+          >
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  onSelect(option.name);
+                  onToggle();
+                }}
+              >
+                <View style={styles.contentTypeRow}>
+                  <Text style={styles.contentTypeIcon}>{option.icon}</Text>
+                  <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>
+                    {option.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -280,12 +313,7 @@ export default function SubmitContentScreen({ navigation }) {
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.headerText }]}>← Voltar</Text>
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
           <Text style={styles.headerIcon}>📄✏️</Text>
@@ -528,13 +556,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
-    flex: 1,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
   headerCenter: {
     flex: 2,
     flexDirection: 'row',
@@ -681,6 +702,14 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
     zIndex: 1000,
     maxHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dropdownScrollView: {
+    maxHeight: 200,
   },
   dropdownItem: {
     paddingHorizontal: 16,
@@ -691,13 +720,13 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
   },
-  contentTypeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   contentTypeIcon: {
     fontSize: 16,
     marginRight: 8,
+  },
+  contentTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   fileUploadArea: {
     borderWidth: 2,
@@ -735,15 +764,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     marginRight: 12,
+    minHeight: 52,
   },
   submitButtonIcon: {
     fontSize: 18,
-    marginRight: 8,
+    marginRight: 10,
+    textAlign: 'center',
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
   },
   cancelButton: {
     flex: 1,
