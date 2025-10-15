@@ -1,0 +1,301 @@
+-- Script COMPLETO para criar banco de dados Trilhas com Sistema de Gamificação
+-- Execute este script no MySQL Workbench para ter um sistema completo e robusto
+
+-- Remover banco existente (se existir) e criar novo
+DROP DATABASE IF EXISTS trilhas;
+CREATE DATABASE trilhas DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Usar o banco de dados
+USE trilhas;
+
+-- ============================================================
+-- TABELAS BÁSICAS
+-- ============================================================
+
+-- Criar tabela de usuários
+CREATE TABLE users (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(191) NOT NULL UNIQUE,
+  matricula VARCHAR(64) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('student','professor') NOT NULL DEFAULT 'student',
+  course ENUM('Informática','Meio Ambiente','Produção Cultural','Mecânica') NULL,
+  profile_photo TEXT NULL,
+  bio TEXT NULL,
+  cover_photo TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_email (email),
+  INDEX idx_matricula (matricula),
+  INDEX idx_role (role),
+  INDEX idx_course (course)
+);
+
+-- Criar tabela de trilhas
+CREATE TABLE trails (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL,
+  icon VARCHAR(10) DEFAULT '📚',
+  category VARCHAR(50) NOT NULL,
+  difficulty ENUM('beginner', 'intermediate', 'advanced') DEFAULT 'beginner',
+  total_xp INT DEFAULT 0,
+  course ENUM('base', 'Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica') DEFAULT 'base',
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_category (category),
+  INDEX idx_difficulty (difficulty),
+  INDEX idx_course (course),
+  INDEX idx_is_active (is_active)
+);
+
+-- Criar tabela de módulos
+CREATE TABLE modules (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  trail_id INT UNSIGNED NOT NULL,
+  title VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL,
+  order_index INT NOT NULL,
+  xp_reward INT DEFAULT 100,
+  resources_count INT DEFAULT 0,
+  badge VARCHAR(10) DEFAULT '🏅',
+  content TEXT,
+  is_locked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE,
+  INDEX idx_trail_order (trail_id, order_index),
+  INDEX idx_is_locked (is_locked)
+);
+
+-- Criar tabela de submissões (conectada com módulos)
+CREATE TABLE submissions (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  module_id INT UNSIGNED NULL,
+  trail_id INT UNSIGNED NULL,
+  title VARCHAR(255) NOT NULL,
+  subject VARCHAR(100) NOT NULL,
+  year VARCHAR(50) NOT NULL,
+  content_type ENUM('video','document','image','other') NOT NULL,
+  description TEXT NOT NULL,
+  keywords TEXT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_size INT NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  feedback TEXT NULL,
+  reviewed_by INT UNSIGNED NULL,
+  reviewed_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE SET NULL,
+  FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE SET NULL,
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_user_id (user_id),
+  INDEX idx_module_id (module_id),
+  INDEX idx_trail_id (trail_id),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
+);
+
+-- Criar tabela de progresso do usuário
+CREATE TABLE user_progress (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  module_id INT UNSIGNED NOT NULL,
+  trail_id INT UNSIGNED NOT NULL,
+  status ENUM('not_started', 'in_progress', 'completed') DEFAULT 'not_started',
+  xp_earned INT DEFAULT 0,
+  completed_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_user_module (user_id, module_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+  FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE,
+  INDEX idx_user_trail (user_id, trail_id),
+  INDEX idx_user_status (user_id, status)
+);
+
+-- Criar tabela de conquistas
+CREATE TABLE achievements (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL,
+  icon VARCHAR(10) DEFAULT '🏆',
+  type ENUM('module', 'trail', 'streak', 'special') DEFAULT 'module',
+  requirement_value INT DEFAULT 1,
+  xp_reward INT DEFAULT 50,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_type (type)
+);
+
+-- Criar tabela de conquistas do usuário
+CREATE TABLE user_achievements (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  achievement_id INT UNSIGNED NOT NULL,
+  earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_user_achievement (user_id, achievement_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id)
+);
+
+-- Criar tabela de XP do usuário (consolidado)
+CREATE TABLE user_xp (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  total_xp INT DEFAULT 0,
+  level INT DEFAULT 1,
+  streak_days INT DEFAULT 0,
+  last_activity_date DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_user (user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Criar tabela de notificações
+CREATE TABLE notifications (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id INT UNSIGNED NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_is_read (is_read),
+  INDEX idx_created_at (created_at)
+);
+
+-- ============================================================
+-- TRIGGERS E REGRAS DE NEGÓCIO
+-- ============================================================
+
+-- Trigger para atualizar XP total quando módulo é completado
+DELIMITER $$
+CREATE TRIGGER update_user_xp_after_progress
+AFTER UPDATE ON user_progress
+FOR EACH ROW
+BEGIN
+  IF NEW.status = 'completed' AND OLD.status != 'completed' THEN
+    -- Atualizar XP total do usuário
+    INSERT INTO user_xp (user_id, total_xp, level)
+    VALUES (NEW.user_id, NEW.xp_earned, 1)
+    ON DUPLICATE KEY UPDATE 
+      total_xp = total_xp + NEW.xp_earned,
+      level = FLOOR((total_xp + NEW.xp_earned) / 1000) + 1,
+      last_activity_date = CURDATE(),
+      updated_at = CURRENT_TIMESTAMP;
+    
+    -- Criar notificação de conclusão
+    INSERT INTO notifications (user_id, type, title, body)
+    VALUES (NEW.user_id, 'module_completed', 'Módulo Concluído!', CONCAT('Você completou o módulo e ganhou ', NEW.xp_earned, ' XP!'));
+  END IF;
+END$$
+DELIMITER ;
+
+-- Trigger para atualizar total_xp da trilha quando módulo é adicionado
+DELIMITER $$
+CREATE TRIGGER update_trail_xp_after_module_insert
+AFTER INSERT ON modules
+FOR EACH ROW
+BEGIN
+  UPDATE trails 
+  SET total_xp = total_xp + NEW.xp_reward,
+      updated_at = CURRENT_TIMESTAMP
+  WHERE id = NEW.trail_id;
+END$$
+DELIMITER ;
+
+-- ============================================================
+-- DADOS INICIAIS
+-- ============================================================
+
+-- Inserir usuário admin inicial
+INSERT INTO users (name, email, matricula, password_hash, role, course) VALUES 
+('Professor Admin', 'admin@trilhas.com', 'PROF-0001', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'professor', NULL);
+
+-- Inserir trilhas base (compartilhadas por todos os cursos)
+INSERT INTO trails (title, description, icon, category, difficulty, total_xp, course) VALUES
+('Matemática', 'Fundamentos de matemática para ensino médio técnico', '🔢', 'Base', 'beginner', 400, 'base'),
+('Português', 'Língua Portuguesa e Literatura', '📝', 'Base', 'beginner', 400, 'base'),
+('Física', 'Fundamentos de Física', '⚛️', 'Base', 'beginner', 400, 'base'),
+('Química', 'Fundamentos de Química', '🧪', 'Base', 'beginner', 400, 'base'),
+('Biologia', 'Ciências Biológicas', '🧬', 'Base', 'beginner', 400, 'base'),
+('História', 'História Geral e do Brasil', '📚', 'Base', 'beginner', 400, 'base'),
+('Geografia', 'Geografia Física e Humana', '🌍', 'Base', 'beginner', 400, 'base'),
+('Artes', 'Artes e Cultura', '🎨', 'Base', 'beginner', 400, 'base'),
+('Educação Física', 'Educação Física e Saúde', '⚽', 'Base', 'beginner', 400, 'base');
+
+-- Inserir módulos para cada trilha base
+INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge) VALUES
+-- Matemática
+(1, 'Matemática I', 'Módulo I de Matemática', 1, 100, '🥇'),
+(1, 'Matemática II', 'Módulo II de Matemática', 2, 100, '🥈'),
+(1, 'Matemática III', 'Módulo III de Matemática', 3, 100, '🥉'),
+(1, 'Matemática IV', 'Módulo IV de Matemática', 4, 100, '🏆'),
+-- Português
+(2, 'Português I', 'Módulo I de Português', 1, 100, '🥇'),
+(2, 'Português II', 'Módulo II de Português', 2, 100, '🥈'),
+(2, 'Português III', 'Módulo III de Português', 3, 100, '🥉'),
+(2, 'Português IV', 'Módulo IV de Português', 4, 100, '🏆');
+
+-- Inserir trilhas técnicas para Informática
+INSERT INTO trails (title, description, icon, category, difficulty, total_xp, course) VALUES
+('Lógica de Programação', 'Fundamentos de lógica e algoritmos', '💻', 'Técnica', 'intermediate', 400, 'Informática'),
+('Banco de Dados', 'Modelagem e gestão de dados', '🗄️', 'Técnica', 'intermediate', 400, 'Informática'),
+('Desenvolvimento Web', 'Criação de aplicações web modernas', '🌐', 'Técnica', 'intermediate', 400, 'Informática'),
+('Redes de Computadores', 'Fundamentos de redes e protocolos', '🔗', 'Técnica', 'intermediate', 400, 'Informática');
+
+-- Inserir módulos para trilhas técnicas de Informática
+INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge) VALUES
+-- Lógica de Programação
+(10, 'Algoritmos I', 'Introdução aos algoritmos', 1, 100, '🥇'),
+(10, 'Estruturas de Controle', 'Condicionais e loops', 2, 100, '🥈'),
+(10, 'Funções e Procedimentos', 'Modularização de código', 3, 100, '🥉'),
+(10, 'Recursão', 'Conceitos de recursão', 4, 100, '🏆'),
+-- Banco de Dados
+(11, 'Modelagem de Dados', 'Conceitos de modelagem', 1, 100, '🥇'),
+(11, 'SQL Básico', 'Consultas e manipulação', 2, 100, '🥈'),
+(11, 'SQL Avançado', 'Joins e subconsultas', 3, 100, '🥉'),
+(11, 'Normalização', 'Técnicas de normalização', 4, 100, '🏆');
+
+-- Inserir conquistas
+INSERT INTO achievements (title, description, icon, type, requirement_value, xp_reward) VALUES
+('Primeiro Passo', 'Complete seu primeiro módulo', '🎯', 'module', 1, 50),
+('Dedicação', 'Complete 5 módulos', '⭐', 'module', 5, 100),
+('Mestre', 'Complete 10 módulos', '🌟', 'module', 10, 200),
+('Trilheiro Iniciante', 'Complete sua primeira trilha', '🏅', 'trail', 1, 150),
+('Trilheiro Expert', 'Complete 3 trilhas', '🏆', 'trail', 3, 300),
+('Sequência de Fogo', 'Mantenha 7 dias de sequência', '🔥', 'streak', 7, 100),
+('Imparável', 'Mantenha 30 dias de sequência', '🚀', 'streak', 30, 500),
+('Programador Iniciante', 'Complete módulos de programação', '💻', 'special', 1, 75);
+
+-- ============================================================
+-- VERIFICAÇÕES FINAIS
+-- ============================================================
+
+SELECT '✅ Banco de dados Trilhas COMPLETO criado com sucesso!' AS status;
+SELECT '📊 Estrutura das tabelas:' AS info;
+SHOW TABLES;
+
+SELECT '👤 Usuário admin criado: admin@trilhas.com (senha: admin123)' AS admin_info;
+SELECT '🎮 Sistema de gamificação ativo com trilhas, módulos e conquistas!' AS gamification_info;
+SELECT '🔗 Relacionamentos configurados entre todas as tabelas!' AS relationships_info;
