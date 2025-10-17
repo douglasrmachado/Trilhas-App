@@ -28,7 +28,6 @@ O Trilhas é uma plataforma educacional completa que permite aos estudantes comp
 - **Node.js** - Runtime JavaScript
 - **Express** - Framework web
 - **TypeScript** - Linguagem tipada
-- **MySQL** - Banco de dados relacional
 - **JWT** - Autenticação baseada em tokens
 - **bcrypt** - Criptografia de senhas
 - **Zod** - Validação de schemas
@@ -213,8 +212,8 @@ curl -X POST http://localhost:3000/auth/login \
 
 ## 📚 Documentação Adicional
 
-- **[Frontend](./app/README.md)** - Documentação completa do aplicativo mobile
-- **[Backend](./server/README.md)** - Documentação completa da API
+- **[Frontend](./frontend/README.md)** - Documentação completa do aplicativo mobile
+- **[Backend](./backend/README.md)** - Documentação completa da API
 
 ## 🤝 Contribuição
 
@@ -230,15 +229,14 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 👥 Autores
 
-- **Douglas** - Desenvolvimento completo
+- **Douglas Roque Machado** - Desenvolvimento completo
 
 ## 📞 Suporte
 
 Para suporte, entre em contato através de:
-- Email: [seu-email@exemplo.com]
-- Issues: [GitHub Issues]
+- Email: douglasroqmachado@gmail.com
 
 ---
 
 **Versão**: 1.0.0  
-**Última atualização**: Dezembro 2024
+**Última atualização**: Novembro 2025
