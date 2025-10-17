@@ -10,7 +10,7 @@ import * as Sharing from 'expo-sharing';
 import * as IntentLauncher from 'expo-intent-launcher';
 
 export default function PDFPreviewScreen({ route, navigation }) {
-  const { fileUrl, fileName, title } = route.params;
+  const { fileUrl, fileName, title, submissionId } = route.params;
   const { colors, isDarkMode } = useTheme();
   const { token } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -23,13 +23,10 @@ export default function PDFPreviewScreen({ route, navigation }) {
     primaryBlue: '#1e90ff',
   }), [colors, isDarkMode]);
 
-  // URL com autenticação para o WebView
-  const pdfUrl = `${fileUrl}?token=${token}`;
-
-  // Para Android, podemos usar o Google Docs Viewer
-  const viewerUrl = Platform.OS === 'android' 
-    ? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`
-    : pdfUrl;
+  // URL direta com autenticação via header (WebView suporta)
+  const pdfUrl = fileUrl;
+  
+  console.log('📄 Carregando PDF:', { fileUrl, fileName, submissionId });
 
   const handleDownload = async () => {
     try {
@@ -38,10 +35,13 @@ export default function PDFPreviewScreen({ route, navigation }) {
       const localFileName = fileName || 'documento.pdf';
       const localUri = FileSystem.documentDirectory + localFileName;
       
-      console.log('📥 Iniciando download:', { fileUrl, localFileName });
+      // Usar rota de download ao invés de preview
+      const downloadUrl = fileUrl.replace('/preview', '/download');
+      
+      console.log('📥 Iniciando download:', { downloadUrl, localFileName });
       
       const downloadResult = await FileSystem.downloadAsync(
-        fileUrl,
+        downloadUrl,
         localUri,
         {
           headers: {
@@ -136,18 +136,20 @@ export default function PDFPreviewScreen({ route, navigation }) {
         )}
         
         <WebView
-          source={{ 
-            uri: viewerUrl,
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }}
+          source={{ uri: pdfUrl }}
           style={styles.webView}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
+          onLoadStart={() => {
+            console.log('📄 Iniciando carregamento do PDF...');
+            setLoading(true);
+          }}
+          onLoadEnd={() => {
+            console.log('✅ PDF carregado com sucesso');
+            setLoading(false);
+          }}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
             console.error('❌ Erro no WebView:', nativeEvent);
+            setLoading(false);
             Alert.alert(
               'Erro ao carregar',
               'Não foi possível visualizar o PDF. Deseja baixar o arquivo?',
@@ -157,11 +159,19 @@ export default function PDFPreviewScreen({ route, navigation }) {
               ]
             );
           }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error('❌ Erro HTTP no WebView:', nativeEvent.statusCode, nativeEvent.url);
+            setLoading(false);
+          }}
           startInLoadingState={true}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowFileAccess={true}
           allowUniversalAccessFromFileURLs={true}
+          originWhitelist={['*']}
+          mixedContentMode="always"
+          scalesPageToFit={true}
         />
       </View>
 

@@ -4,6 +4,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { json } from 'express';
+import path from 'path';
 import authRouter from './routes/auth';
 import submissionsRouter from './routes/submissions';
 import notificationsRouter from './routes/notifications';
@@ -41,6 +42,9 @@ app.use(limiter);
 // Middlewares globais
 app.use(cors(config.cors));
 app.use(json({ limit: '10mb' })); // Limite de tamanho para uploads
+
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Logs de requisições
 app.use((req, res, next) => {

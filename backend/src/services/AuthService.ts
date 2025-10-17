@@ -35,7 +35,7 @@ export class AuthService {
    * Registra um novo professor (apenas para usuários autenticados como professor)
    */
   async registerProfessor(userData: CreateUserRequest): Promise<void> {
-    const { name, email, registryId, password } = userData;
+    const { name, email, registryId, password, course } = userData;
     
     // Verificar se email ou matrícula já existem
     const [existingRows] = await pool.query(
@@ -51,10 +51,10 @@ export class AuthService {
     // Hash da senha
     const passwordHash = await bcrypt.hash(password, 10);
     
-    // Inserir usuário como professor
+    // Inserir usuário como professor com curso
     await pool.query(
-      'INSERT INTO users (name, email, matricula, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-      [name, email, registryId, passwordHash, 'professor']
+      'INSERT INTO users (name, email, matricula, password_hash, role, course) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, registryId, passwordHash, 'professor', course]
     );
   }
 

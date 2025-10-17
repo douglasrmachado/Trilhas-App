@@ -234,6 +234,30 @@ export default function ProfessorHomeScreen({ navigation }) {
           }
         }}
       >
+        {/* Admin Actions Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>⚙️</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Ações Administrativas</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.adminActionCard, { backgroundColor: theme.cardBg }]}
+            onPress={() => navigation.navigate('CreateProfessor')}
+          >
+            <View style={styles.adminActionIcon}>
+              <Text style={styles.adminActionEmoji}>👨‍🏫</Text>
+            </View>
+            <View style={styles.adminActionContent}>
+              <Text style={[styles.adminActionTitle, { color: theme.textColor }]}>Criar Novo Professor</Text>
+              <Text style={[styles.adminActionDescription, { color: theme.textColor + 'AA' }]}>
+                Cadastrar um novo professor no sistema
+              </Text>
+            </View>
+            <Text style={styles.adminActionArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Filters Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -774,5 +798,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#fff',
+  },
+  adminActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 10,
+  },
+  adminActionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#1e90ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  adminActionEmoji: {
+    fontSize: 24,
+  },
+  adminActionContent: {
+    flex: 1,
+  },
+  adminActionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  adminActionDescription: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  adminActionArrow: {
+    fontSize: 32,
+    color: '#1e90ff',
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });

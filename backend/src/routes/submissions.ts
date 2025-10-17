@@ -290,6 +290,107 @@ router.get('/test/count', requireAuth, asyncHandler(async (req: Request, res: Re
 }));
 
 /**
+ * @route   GET /submissions/:id/preview
+ * @desc    Preview do arquivo anexado de uma submissão (inline)
+ * @access  Private (Professores e autor da submissão ou submissão aprovada)
+ */
+router.get('/:id/preview', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { token } = req.query;
+
+  // Verificar token (da query string para WebView)
+  if (!token && !req.headers.authorization) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token de autenticação não fornecido'
+    });
+  }
+
+  // Decodificar e validar token
+  let userId: number;
+  let userRole: string;
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const { config } = await import('../config');
+    
+    const tokenString = (token as string) || req.headers.authorization?.replace('Bearer ', '');
+    const decoded = jwt.verify(tokenString, config.jwt.secret) as any;
+    userId = decoded.sub;
+    userRole = decoded.role;
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token inválido ou expirado'
+    });
+  }
+
+  console.log('👁️ Preview de arquivo solicitado:', { submissionId: id, userId, userRole });
+
+  // Buscar informações da submissão
+  const submission = await submissionService.getSubmissionById(Number(id));
+  
+  if (!submission) {
+    return res.status(404).json({
+      success: false,
+      message: 'Submissão não encontrada'
+    });
+  }
+
+  // Verificar se o usuário pode acessar esta submissão
+  if (userRole === 'student') {
+    const isOwner = submission.user_id === userId;
+    const isApproved = submission.status === 'approved';
+    
+    if (!isOwner && !isApproved) {
+      return res.status(403).json({
+        success: false,
+        message: 'Você não tem permissão para visualizar este arquivo'
+      });
+    }
+  }
+
+  // Verificar se há arquivo anexado
+  if (!submission.file_path || !submission.file_name) {
+    return res.status(404).json({
+      success: false,
+      message: 'Nenhum arquivo anexado encontrado'
+    });
+  }
+
+  // Verificar se o arquivo existe no sistema de arquivos
+  const filePath = path.join(process.cwd(), 'uploads', submission.file_path);
+  
+  if (!fs.existsSync(filePath)) {
+    console.error('❌ Arquivo não encontrado no sistema:', filePath);
+    return res.status(404).json({
+      success: false,
+      message: 'Arquivo não encontrado no servidor'
+    });
+  }
+
+  // Configurar headers para visualização inline
+  res.setHeader('Content-Disposition', `inline; filename="${submission.file_name}"`);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+
+  // Enviar o arquivo
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('❌ Erro ao enviar arquivo:', err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: 'Erro ao visualizar arquivo'
+        });
+      }
+    } else {
+      console.log('✅ Arquivo enviado com sucesso para preview:', submission.file_name);
+    }
+  });
+}));
+
+/**
  * @route   GET /submissions/:id/download
  * @desc    Download do arquivo anexado de uma submissão
  * @access  Private (Professores e autor da submissão)

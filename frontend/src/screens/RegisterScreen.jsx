@@ -17,6 +17,13 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const { colors, isDarkMode, toggle } = useTheme();
 
+  // Função para permitir apenas letras e números na matrícula
+  const handleRegistryIdChange = (text) => {
+    // Remove caracteres especiais, mantém apenas letras e números
+    const cleaned = text.replace(/[^a-zA-Z0-9]/g, '');
+    setRegistryId(cleaned.toUpperCase());
+  };
+
   const courses = ['Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica'];
 
   const themed = useMemo(() => ({
@@ -77,7 +84,14 @@ export default function RegisterScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <TextInput placeholder="Nome" value={name} onChangeText={setName} placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
           <TextInput placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
-          <TextInput placeholder="N° de matrícula" value={registryId} onChangeText={setRegistryId} autoCapitalize="none" keyboardType="numeric" placeholderTextColor={themed.text + '88'} style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} />
+          <TextInput 
+            placeholder="N° de matrícula (letras e números)" 
+            value={registryId} 
+            onChangeText={handleRegistryIdChange} 
+            autoCapitalize="characters" 
+            placeholderTextColor={themed.text + '88'} 
+            style={[styles.input, { borderColor: themed.inputBorder, color: themed.text }]} 
+          />
           
           {/* Seletor de Curso */}
           <View style={styles.courseContainer}>

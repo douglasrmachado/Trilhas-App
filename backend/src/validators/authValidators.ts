@@ -27,6 +27,7 @@ export const createProfessorSchema = z.object({
   email: z.string().email('Email inválido'),
   registryId: z.string().min(1, 'Matrícula é obrigatória'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  course: z.enum(['Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica']),
 });
 
 /**

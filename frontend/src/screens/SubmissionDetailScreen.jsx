@@ -367,14 +367,28 @@ export default function SubmissionDetailScreen({ navigation, route }) {
                   {submission.file_size ? `${(submission.file_size / 1024 / 1024).toFixed(2)} MB` : 'Tamanho não disponível'}
                 </Text>
               </View>
-              <TouchableOpacity
-                style={[styles.downloadButton, { backgroundColor: theme.primaryBlue }]}
-                onPress={() => handleFileDownload(submission.id, submission.file_name)}
-                disabled={loading}
-              >
-                <Text style={styles.downloadIcon}>{loading ? '⏳' : '⬇️'}</Text>
-                <Text style={styles.downloadText}>{loading ? 'Baixando...' : 'Baixar'}</Text>
-              </TouchableOpacity>
+              <View style={styles.fileActions}>
+                <TouchableOpacity
+                  style={[styles.previewButton, { backgroundColor: theme.successGreen }]}
+                  onPress={() => {
+                    navigation.navigate('PDFPreview', {
+                      fileUrl: `${getApiUrl()}/submissions/${submission.id}/preview?token=${token}`,
+                      fileName: submission.file_name,
+                      title: submission.title,
+                      submissionId: submission.id
+                    });
+                  }}
+                >
+                  <Text style={styles.previewIcon}>👁️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.downloadButton, { backgroundColor: theme.primaryBlue }]}
+                  onPress={() => handleFileDownload(submission.id, submission.file_name)}
+                  disabled={loading}
+                >
+                  <Text style={styles.downloadIcon}>{loading ? '⏳' : '⬇️'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
@@ -586,16 +600,29 @@ const styles = StyleSheet.create({
   fileSize: {
     fontSize: 14,
   },
-  downloadButton: {
+  fileActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 8,
+  },
+  previewButton: {
+    width: 40,
+    height: 40,
     borderRadius: 8,
-    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewIcon: {
+    fontSize: 18,
+  },
+  downloadButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   downloadIcon: {
-    fontSize: 16,
+    fontSize: 18,
   },
   downloadText: {
     color: '#fff',

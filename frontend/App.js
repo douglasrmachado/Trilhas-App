@@ -79,7 +79,7 @@ function RootNavigator() {
         <>
           <Stack.Screen name="ProfessorHome" component={ProfessorHomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ title: 'Criar Professor' }} />
+          <Stack.Screen name="CreateProfessor" component={CreateProfessorScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SubmissionsList" component={SubmissionsListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SubmissionDetail" component={SubmissionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ReviewedSubmissions" component={ReviewedSubmissionsScreen} options={{ headerShown: false }} />

@@ -30,7 +30,7 @@
 ```
 
 ### POST /auth/register
-**Descrição:** Cadastro de novo usuário
+**Descrição:** Cadastro de novo usuário (estudante)
 ```json
 {
   "name": "João Silva",
@@ -38,6 +38,33 @@
   "registryId": "123456",
   "password": "senha123",
   "course": "Informática"
+}
+```
+
+### POST /auth/professors
+**Descrição:** Criar novo professor (apenas para professores autenticados)
+**Headers:** `Authorization: Bearer {token}` (apenas professores)
+```json
+{
+  "name": "Maria Santos",
+  "email": "maria@email.com",
+  "registryId": "789012",
+  "password": "senha123",
+  "course": "Informática"
+}
+```
+
+**Cursos disponíveis:**
+- `Informática`
+- `Meio Ambiente`
+- `Produção Cultural`
+- `Mecânica`
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "message": "Professor criado com sucesso"
 }
 ```
 

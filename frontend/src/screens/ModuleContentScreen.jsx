@@ -166,9 +166,10 @@ export default function ModuleContentScreen({ route, navigation }) {
                       style={[styles.viewButton, { backgroundColor: theme.primaryBlue }]}
                       onPress={() => {
                         navigation.navigate('PDFPreview', {
-                          fileUrl: `${apiUrl}/submissions/${content.id}/download`,
+                          fileUrl: `${apiUrl}/submissions/${content.id}/preview?token=${token}`,
                           fileName: content.file_name,
-                          title: content.title
+                          title: content.title,
+                          submissionId: content.id
                         });
                       }}
                     >
