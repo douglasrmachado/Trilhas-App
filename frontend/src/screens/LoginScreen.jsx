@@ -34,7 +34,10 @@ const LoginScreen = memo(function LoginScreen({ navigation }) {
     link: '#1e90ff',
   }), [colors]);
 
-  const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+  // Detecta se está rodando no web e usa localhost
+  const apiUrl = Platform.OS === 'web' 
+    ? 'http://localhost:3000' 
+    : (Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000');
 
   // Limpar campos quando a tela for focada
   useFocusEffect(
