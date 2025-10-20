@@ -6,7 +6,7 @@ export const API_CONFIG = {
   LOCAL: 'http://localhost:3000',
   
   // Para desenvolvimento com Expo (use o IP da sua máquina)
-  EXPO: 'http://26.162.143.213:3000', // IP da sua máquina
+  EXPO: 'http://11.1.1.4:3000', // IP da sua máquina
   
   // Para produção
   PRODUCTION: 'https://sua-api.com',

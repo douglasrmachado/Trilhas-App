@@ -23,6 +23,12 @@ class NotificationService {
     async markAllRead(userId) {
         await db_1.default.query(`UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0`, [userId]);
     }
+    async markRead(notificationId, userId) {
+        await db_1.default.query(`UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`, [notificationId, userId]);
+    }
+    async deleteAll(userId) {
+        await db_1.default.query(`DELETE FROM notifications WHERE user_id = ?`, [userId]);
+    }
     async create(userId, type, title, body) {
         await db_1.default.query(`INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)`, [userId, type, title, body || null]);
     }

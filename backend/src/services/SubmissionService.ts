@@ -1,6 +1,7 @@
 import pool from '../db';
 import { Submission, CreateSubmissionRequest, SubmissionResponse } from '../models/Submission';
 import { NotificationService } from './NotificationService';
+import { AchievementService } from './AchievementService';
 
 export class SubmissionService {
   /**
@@ -194,6 +195,12 @@ export class SubmissionService {
       const body = `Seu conteúdo "${sub.title}" foi ${status === 'approved' ? 'aprovado' : 'rejeitado'}.`;
       const notificationType = status === 'approved' ? 'submission_approved' : 'submission_rejected';
       await notif.create(sub.user_id, notificationType, title, body);
+      
+      // Se for aprovação, verificar e conceder conquista "Primeira Aprovação"
+      if (status === 'approved') {
+        const achievementService = new AchievementService();
+        await achievementService.checkFirstApprovalAchievement(sub.user_id);
+      }
     }
   }
 

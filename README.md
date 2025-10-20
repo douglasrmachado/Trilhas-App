@@ -53,7 +53,7 @@ cd trilhass/Trilhas-App
 
 #### Instalar dependências
 ```bash
-cd server
+cd backend
 npm install
 ```
 
@@ -91,7 +91,7 @@ O servidor estará disponível em `http://localhost:3000`
 
 #### Instalar dependências
 ```bash
-cd app
+cd frontend
 npm install
 ```
 

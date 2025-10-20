@@ -207,17 +207,17 @@ export default function ReviewedSubmissionsScreen({ navigation }) {
         <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
-          <Text style={styles.headerIcon}>📋</Text>
           <Text style={[styles.headerTitle, { color: theme.headerText }]}>
-            Submissões Revisadas ({submissions.length})
+            Submissões
+          </Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>
+            Revisadas
           </Text>
         </View>
         
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={onRefresh}>
-            <Text style={styles.refreshIcon}>🔄</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={onRefresh} style={styles.headerRight}>
+          <Text style={styles.refreshIcon}>🔄</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -261,24 +261,22 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    position: 'relative',
   },
   headerCenter: {
-    flex: 2,
-    flexDirection: 'row',
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    pointerEvents: 'none',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   headerRight: {
-    flex: 1,
-    alignItems: 'flex-end',
+    padding: 4,
   },
   refreshIcon: {
     fontSize: 20,

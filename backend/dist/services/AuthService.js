@@ -28,7 +28,7 @@ class AuthService {
      * Registra um novo professor (apenas para usuários autenticados como professor)
      */
     async registerProfessor(userData) {
-        const { name, email, registryId, password } = userData;
+        const { name, email, registryId, password, course } = userData;
         // Verificar se email ou matrícula já existem
         const [existingRows] = await db_1.default.query('SELECT id FROM users WHERE email = ? OR matricula = ?', [email, registryId]);
         const existing = Array.isArray(existingRows) && existingRows.length > 0;
@@ -37,8 +37,8 @@ class AuthService {
         }
         // Hash da senha
         const passwordHash = await bcrypt_1.default.hash(password, 10);
-        // Inserir usuário como professor
-        await db_1.default.query('INSERT INTO users (name, email, matricula, password_hash, role) VALUES (?, ?, ?, ?, ?)', [name, email, registryId, passwordHash, 'professor']);
+        // Inserir usuário como professor com curso
+        await db_1.default.query('INSERT INTO users (name, email, matricula, password_hash, role, course) VALUES (?, ?, ?, ?, ?, ?)', [name, email, registryId, passwordHash, 'professor', course]);
     }
     /**
      * Autentica um usuário e retorna token + dados do usuário

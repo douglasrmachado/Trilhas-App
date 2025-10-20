@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubmissionService = void 0;
 const db_1 = __importDefault(require("../db"));
 const NotificationService_1 = require("./NotificationService");
+const AchievementService_1 = require("./AchievementService");
 class SubmissionService {
     /**
      * Cria uma nova submissão
@@ -149,6 +150,11 @@ class SubmissionService {
             const body = `Seu conteúdo "${sub.title}" foi ${status === 'approved' ? 'aprovado' : 'rejeitado'}.`;
             const notificationType = status === 'approved' ? 'submission_approved' : 'submission_rejected';
             await notif.create(sub.user_id, notificationType, title, body);
+            // Se for aprovação, verificar e conceder conquista "Primeira Aprovação"
+            if (status === 'approved') {
+                const achievementService = new AchievementService_1.AchievementService();
+                await achievementService.checkFirstApprovalAchievement(sub.user_id);
+            }
         }
     }
     /**

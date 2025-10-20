@@ -29,6 +29,12 @@ export declare const createProfessorSchema: z.ZodObject<{
     email: z.ZodString;
     registryId: z.ZodString;
     password: z.ZodString;
+    course: z.ZodEnum<{
+        Informática: "Informática";
+        "Meio Ambiente": "Meio Ambiente";
+        "Produ\u00E7\u00E3o Cultural": "Produção Cultural";
+        Mecânica: "Mecânica";
+    }>;
 }, z.core.$strip>;
 /**
  * Tipos inferidos dos schemas

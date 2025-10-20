@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -238,6 +271,94 @@ router.get('/test/count', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(a
         success: true,
         message: `Total de submissões no banco: ${total}`,
         total: total
+    });
+}));
+/**
+ * @route   GET /submissions/:id/preview
+ * @desc    Preview do arquivo anexado de uma submissão (inline)
+ * @access  Private (Professores e autor da submissão ou submissão aprovada)
+ */
+router.get('/:id/preview', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const { token } = req.query;
+    // Verificar token (da query string para WebView)
+    if (!token && !req.headers.authorization) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token de autenticação não fornecido'
+        });
+    }
+    // Decodificar e validar token
+    let userId;
+    let userRole;
+    try {
+        const jwt = require('jsonwebtoken');
+        const { config } = await Promise.resolve().then(() => __importStar(require('../config')));
+        const tokenString = token || req.headers.authorization?.replace('Bearer ', '');
+        const decoded = jwt.verify(tokenString, config.jwt.secret);
+        userId = decoded.sub;
+        userRole = decoded.role;
+    }
+    catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token inválido ou expirado'
+        });
+    }
+    console.log('👁️ Preview de arquivo solicitado:', { submissionId: id, userId, userRole });
+    // Buscar informações da submissão
+    const submission = await submissionService.getSubmissionById(Number(id));
+    if (!submission) {
+        return res.status(404).json({
+            success: false,
+            message: 'Submissão não encontrada'
+        });
+    }
+    // Verificar se o usuário pode acessar esta submissão
+    if (userRole === 'student') {
+        const isOwner = submission.user_id === userId;
+        const isApproved = submission.status === 'approved';
+        if (!isOwner && !isApproved) {
+            return res.status(403).json({
+                success: false,
+                message: 'Você não tem permissão para visualizar este arquivo'
+            });
+        }
+    }
+    // Verificar se há arquivo anexado
+    if (!submission.file_path || !submission.file_name) {
+        return res.status(404).json({
+            success: false,
+            message: 'Nenhum arquivo anexado encontrado'
+        });
+    }
+    // Verificar se o arquivo existe no sistema de arquivos
+    const filePath = path_1.default.join(process.cwd(), 'uploads', submission.file_path);
+    if (!fs_1.default.existsSync(filePath)) {
+        console.error('❌ Arquivo não encontrado no sistema:', filePath);
+        return res.status(404).json({
+            success: false,
+            message: 'Arquivo não encontrado no servidor'
+        });
+    }
+    // Configurar headers para visualização inline
+    res.setHeader('Content-Disposition', `inline; filename="${submission.file_name}"`);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    // Enviar o arquivo
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error('❌ Erro ao enviar arquivo:', err);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao visualizar arquivo'
+                });
+            }
+        }
+        else {
+            console.log('✅ Arquivo enviado com sucesso para preview:', submission.file_name);
+        }
     });
 }));
 /**

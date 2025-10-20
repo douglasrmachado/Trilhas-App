@@ -23,9 +23,15 @@ export default function ProfessorHomeScreen({ navigation }) {
   
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [selectedFilter1, setSelectedFilter1] = useState('Todos');
-  const [selectedFilter2, setSelectedFilter2] = useState('Todas');
-  const [selectedFilter3, setSelectedFilter3] = useState('Todos');
+  
+  // Filtros
+  const [selectedCourse, setSelectedCourse] = useState('Todos');
+  const [selectedYear, setSelectedYear] = useState('Todos');
+  const [selectedSubject, setSelectedSubject] = useState('Todas');
+  const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+  const [showYearDropdown, setShowYearDropdown] = useState(false);
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
 
@@ -40,6 +46,27 @@ export default function ProfessorHomeScreen({ navigation }) {
     lightGreen: '#4CAF50',
     warningOrange: '#f59e0b',
   }), [colors, isDarkMode]);
+
+  // Opções dos filtros
+  const courseOptions = ['Todos', 'Informática', 'Meio Ambiente', 'Mecânica', 'Produção Cultural'];
+  const yearOptions = ['Todos', '1º', '2º', '3º', '4º'];
+  const subjectOptions = ['Todas', 'Matemática', 'Física', 'Química', 'Biologia', 'História', 
+    'Geografia', 'Português', 'Inglês', 'Filosofia', 'Sociologia', 'Artes', 'Educação Física',
+    'Lógica de Programação', 'Banco de Dados', 'Desenvolvimento Web', 'Redes de Computadores',
+    'Ecologia', 'Gestão Ambiental', 'Recursos Hídricos', 'Educação Ambiental',
+    'Desenho Técnico', 'Resistência dos Materiais', 'Processos de Fabricação', 'Manutenção Industrial',
+    'História da Arte', 'Produção de Eventos', 'Gestão Cultural', 'Comunicação e Mídia'
+  ];
+
+  // Filtrar submissões baseado nos filtros selecionados
+  const filteredSubmissions = useMemo(() => {
+    return pendingSubmissions.filter(submission => {
+      const matchesCourse = selectedCourse === 'Todos' || true; // curso não está na submission ainda
+      const matchesYear = selectedYear === 'Todos' || submission.year === selectedYear;
+      const matchesSubject = selectedSubject === 'Todas' || submission.subject === selectedSubject;
+      return matchesCourse && matchesYear && matchesSubject;
+    });
+  }, [pendingSubmissions, selectedCourse, selectedYear, selectedSubject]);
 
   useEffect(() => {
     loadPendingSubmissions();
@@ -266,20 +293,107 @@ export default function ProfessorHomeScreen({ navigation }) {
           </View>
           
           <View style={styles.filtersContainer}>
-            <TouchableOpacity style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
-              <Text style={[styles.filterText, { color: theme.textColor }]}>{selectedFilter1}</Text>
-              <Text style={styles.filterArrow}>▼</Text>
-            </TouchableOpacity>
+            {/* Filtro de Curso */}
+            <View style={styles.filterWrapper}>
+              <Text style={[styles.filterLabel, { color: theme.textColor }]}>Curso</Text>
+              <TouchableOpacity 
+                style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}
+                onPress={() => {
+                  setShowCourseDropdown(!showCourseDropdown);
+                  setShowYearDropdown(false);
+                  setShowSubjectDropdown(false);
+                }}
+              >
+                <Text style={[styles.filterText, { color: theme.textColor }]}>{selectedCourse}</Text>
+                <Text style={styles.filterArrow}>▼</Text>
+              </TouchableOpacity>
+              {showCourseDropdown && (
+                <View style={[styles.dropdownList, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
+                  <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {courseOptions.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setSelectedCourse(option);
+                          setShowCourseDropdown(false);
+                        }}
+                      >
+                        <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>{option}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
             
-            <TouchableOpacity style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
-              <Text style={[styles.filterText, { color: theme.textColor }]}>{selectedFilter2}</Text>
-              <Text style={styles.filterArrow}>▼</Text>
-            </TouchableOpacity>
+            {/* Filtro de Ano */}
+            <View style={styles.filterWrapper}>
+              <Text style={[styles.filterLabel, { color: theme.textColor }]}>Ano</Text>
+              <TouchableOpacity 
+                style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}
+                onPress={() => {
+                  setShowYearDropdown(!showYearDropdown);
+                  setShowCourseDropdown(false);
+                  setShowSubjectDropdown(false);
+                }}
+              >
+                <Text style={[styles.filterText, { color: theme.textColor }]}>{selectedYear}</Text>
+                <Text style={styles.filterArrow}>▼</Text>
+              </TouchableOpacity>
+              {showYearDropdown && (
+                <View style={[styles.dropdownList, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
+                  <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {yearOptions.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setSelectedYear(option);
+                          setShowYearDropdown(false);
+                        }}
+                      >
+                        <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>{option}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
             
-            <TouchableOpacity style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
-              <Text style={[styles.filterText, { color: theme.textColor }]}>{selectedFilter3}</Text>
-              <Text style={styles.filterArrow}>▼</Text>
-            </TouchableOpacity>
+            {/* Filtro de Matéria */}
+            <View style={styles.filterWrapper}>
+              <Text style={[styles.filterLabel, { color: theme.textColor }]}>Matéria</Text>
+              <TouchableOpacity 
+                style={[styles.filterDropdown, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}
+                onPress={() => {
+                  setShowSubjectDropdown(!showSubjectDropdown);
+                  setShowCourseDropdown(false);
+                  setShowYearDropdown(false);
+                }}
+              >
+                <Text style={[styles.filterText, { color: theme.textColor }]} numberOfLines={1}>{selectedSubject}</Text>
+                <Text style={styles.filterArrow}>▼</Text>
+              </TouchableOpacity>
+              {showSubjectDropdown && (
+                <View style={[styles.dropdownList, { backgroundColor: theme.cardBg, borderColor: theme.textColor + '20' }]}>
+                  <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {subjectOptions.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setSelectedSubject(option);
+                          setShowSubjectDropdown(false);
+                        }}
+                      >
+                        <Text style={[styles.dropdownItemText, { color: theme.textColor }]}>{option}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -288,14 +402,23 @@ export default function ProfessorHomeScreen({ navigation }) {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionIcon}>📄</Text>
             <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
-              Conteúdos Pendentes ({pendingSubmissions.length})
+              Conteúdos Pendentes ({filteredSubmissions.length})
             </Text>
-            <TouchableOpacity
-              style={[styles.reviewButton, { backgroundColor: theme.primaryBlue }]}
-              onPress={() => navigation.navigate('ReviewedSubmissions')}
-            >
-              <Text style={styles.reviewButtonText}>Submissões Revisadas</Text>
-            </TouchableOpacity>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.reviewButton, { backgroundColor: theme.primaryBlue }]}
+                onPress={() => navigation.navigate('ReviewedSubmissions')}
+              >
+                <Text style={styles.reviewButtonText}>Submissões Revisadas</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.rewardButton, { backgroundColor: '#FFD700' }]}
+                onPress={() => navigation.navigate('RewardRequests')}
+              >
+                <Text style={styles.rewardButtonText}>🎁 Recompensas</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {loadingSubmissions ? (
@@ -304,18 +427,18 @@ export default function ProfessorHomeScreen({ navigation }) {
                 Carregando submissões pendentes...
               </Text>
             </View>
-          ) : pendingSubmissions.length === 0 ? (
+          ) : filteredSubmissions.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>📭</Text>
               <Text style={[styles.emptyTitle, { color: theme.textColor }]}>
-                Nenhuma submissão pendente
+                Nenhuma submissão {pendingSubmissions.length > 0 ? 'encontrada com os filtros selecionados' : 'pendente'}
               </Text>
               <Text style={[styles.emptySubtitle, { color: theme.textColor + '88' }]}>
-                Não há conteúdos aguardando revisão
+                {pendingSubmissions.length > 0 ? 'Tente ajustar os filtros' : 'Não há conteúdos aguardando revisão'}
               </Text>
             </View>
           ) : (
-            pendingSubmissions.map((submission) => (
+            filteredSubmissions.map((submission) => (
             <TouchableOpacity 
               key={submission.id} 
               style={[styles.contentCard, { backgroundColor: theme.cardBg }]}
@@ -593,6 +716,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  rewardButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  rewardButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   statusContainer: {
     alignItems: 'flex-end',
     marginTop: 12,
@@ -634,23 +771,65 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   filtersContainer: {
+    flexDirection: 'row',
     gap: 10,
+    flexWrap: 'wrap',
+  },
+  filterWrapper: {
+    flex: 1,
+    minWidth: '30%',
+    position: 'relative',
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
   },
   filterDropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1,
     borderRadius: 8,
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 13,
+    flex: 1,
   },
   filterArrow: {
     fontSize: 12,
     color: '#666',
+    marginLeft: 4,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  dropdownItemText: {
+    fontSize: 13,
   },
   contentCard: {
     borderRadius: 12,

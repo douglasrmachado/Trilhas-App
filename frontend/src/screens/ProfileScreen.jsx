@@ -225,7 +225,10 @@ export default function ProfileScreen({ navigation }) {
           </View>
           
           {/* Redeem Reward Button */}
-          <TouchableOpacity style={[styles.redeemButton, { backgroundColor: theme.gold }]}>
+          <TouchableOpacity 
+            style={[styles.redeemButton, { backgroundColor: theme.gold }]}
+            onPress={() => navigation.navigate('RedeemReward')}
+          >
             <Text style={styles.redeemIcon}>🎁</Text>
             <Text style={styles.redeemText}>Resgatar Recompensa</Text>
           </TouchableOpacity>

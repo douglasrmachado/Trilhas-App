@@ -9,10 +9,13 @@ const compression_1 = __importDefault(require("compression"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const express_2 = require("express");
+const path_1 = __importDefault(require("path"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const submissions_1 = __importDefault(require("./routes/submissions"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
 const trails_1 = __importDefault(require("./routes/trails"));
+const achievements_1 = __importDefault(require("./routes/achievements"));
+const rewardRequests_1 = __importDefault(require("./routes/rewardRequests"));
 const errorHandler_1 = require("./utils/errorHandler");
 const config_1 = require("./config");
 const bootstrap_1 = require("./utils/bootstrap");
@@ -39,6 +42,8 @@ app.use(limiter);
 // Middlewares globais
 app.use((0, cors_1.default)(config_1.config.cors));
 app.use((0, express_2.json)({ limit: '10mb' })); // Limite de tamanho para uploads
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express_1.default.static(path_1.default.join(process.cwd(), 'uploads')));
 // Logs de requisições
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -57,6 +62,8 @@ app.use('/auth', auth_1.default);
 app.use('/submissions', submissions_1.default);
 app.use('/notifications', notifications_1.default);
 app.use('/trails', trails_1.default);
+app.use('/achievements', achievements_1.default);
+app.use('/reward-requests', rewardRequests_1.default);
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler_1.errorHandler);
 // Inicializar servidor

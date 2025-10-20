@@ -82,7 +82,7 @@ CREATE TABLE submissions (
   title VARCHAR(255) NOT NULL,
   subject VARCHAR(100) NOT NULL,
   year VARCHAR(50) NOT NULL,
-  content_type ENUM('video','document','image','other') NOT NULL,
+  content_type ENUM('resumo','mapa','exercicio','apresentacao') NOT NULL,
   description TEXT NOT NULL,
   keywords TEXT NULL,
   file_path VARCHAR(500) NOT NULL,
@@ -184,6 +184,26 @@ CREATE TABLE notifications (
   INDEX idx_created_at (created_at)
 );
 
+-- Criar tabela de solicitações de recompensas
+CREATE TABLE reward_requests (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  student_id INT UNSIGNED NOT NULL,
+  reward_type ENUM('horas_afins', 'recuperacao_extra', 'pontos_extra') NOT NULL,
+  points_cost INT UNSIGNED NOT NULL DEFAULT 100,
+  message TEXT,
+  status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  professor_id INT UNSIGNED NULL,
+  professor_response TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (professor_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_student_id (student_id),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
+);
+
 -- ============================================================
 -- TRIGGERS E REGRAS DE NEGÓCIO
 -- ============================================================
@@ -275,7 +295,107 @@ INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge
 (11, 'Modelagem de Dados', 'Conceitos de modelagem', 1, 100, '🥇'),
 (11, 'SQL Básico', 'Consultas e manipulação', 2, 100, '🥈'),
 (11, 'SQL Avançado', 'Joins e subconsultas', 3, 100, '🥉'),
-(11, 'Normalização', 'Técnicas de normalização', 4, 100, '🏆');
+(11, 'Normalização', 'Técnicas de normalização', 4, 100, '🏆'),
+-- Desenvolvimento Web
+(12, 'HTML e CSS', 'Fundamentos de desenvolvimento web', 1, 100, '🥇'),
+(12, 'JavaScript', 'Programação frontend', 2, 100, '🥈'),
+(12, 'React', 'Biblioteca para interfaces', 3, 100, '🥉'),
+(12, 'Node.js', 'Desenvolvimento backend', 4, 100, '🏆'),
+-- Redes de Computadores
+(13, 'Fundamentos de Redes', 'Conceitos básicos de redes', 1, 100, '🥇'),
+(13, 'Protocolos TCP/IP', 'Protocolos de comunicação', 2, 100, '🥈'),
+(13, 'Segurança de Redes', 'Proteção e segurança', 3, 100, '🥉'),
+(13, 'Administração de Redes', 'Gestão de infraestrutura', 4, 100, '🏆');
+
+-- Inserir trilhas técnicas para Mecânica
+INSERT INTO trails (title, description, icon, category, difficulty, total_xp, course) VALUES
+('Desenho Técnico', 'Fundamentos de desenho técnico', '📐', 'Técnica', 'intermediate', 400, 'Mecânica'),
+('Resistência dos Materiais', 'Propriedades e comportamento dos materiais', '🔧', 'Técnica', 'intermediate', 400, 'Mecânica'),
+('Processos de Fabricação', 'Técnicas de produção industrial', '⚙️', 'Técnica', 'intermediate', 400, 'Mecânica'),
+('Manutenção Industrial', 'Gestão e manutenção de equipamentos', '🔨', 'Técnica', 'intermediate', 400, 'Mecânica');
+
+-- Inserir módulos para trilhas técnicas de Mecânica
+INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge) VALUES
+-- Desenho Técnico
+(14, 'Vistas e Projeções', 'Fundamentos de representação', 1, 100, '🥇'),
+(14, 'Cortes e Seções', 'Técnicas de corte', 2, 100, '🥈'),
+(14, 'Tolerâncias', 'Especificações dimensionais', 3, 100, '🥉'),
+(14, 'Desenho Assistido', 'CAD e ferramentas digitais', 4, 100, '🏆'),
+-- Resistência dos Materiais
+(15, 'Propriedades dos Materiais', 'Características físicas', 1, 100, '🥇'),
+(15, 'Tensões e Deformações', 'Comportamento sob carga', 2, 100, '🥈'),
+(15, 'Flexão e Torção', 'Esforços combinados', 3, 100, '🥉'),
+(15, 'Fadiga dos Materiais', 'Comportamento cíclico', 4, 100, '🏆'),
+-- Processos de Fabricação
+(16, 'Usinagem', 'Processos de remoção de material', 1, 100, '🥇'),
+(16, 'Soldagem', 'Técnicas de união', 2, 100, '🥈'),
+(16, 'Conformação', 'Processos de deformação', 3, 100, '🥉'),
+(16, 'Tratamentos Térmicos', 'Modificação de propriedades', 4, 100, '🏆'),
+-- Manutenção Industrial
+(17, 'Planejamento de Manutenção', 'Estratégias preventivas', 1, 100, '🥇'),
+(17, 'Diagnóstico de Falhas', 'Identificação de problemas', 2, 100, '🥈'),
+(17, 'Manutenção Preditiva', 'Monitoramento avançado', 3, 100, '🥉'),
+(17, 'Gestão de Ativos', 'Otimização de recursos', 4, 100, '🏆');
+
+-- Inserir trilhas técnicas para Meio Ambiente
+INSERT INTO trails (title, description, icon, category, difficulty, total_xp, course) VALUES
+('Gestão Ambiental', 'Administração de recursos ambientais', '🌱', 'Técnica', 'intermediate', 400, 'Meio Ambiente'),
+('Química Ambiental', 'Processos químicos no ambiente', '🧪', 'Técnica', 'intermediate', 400, 'Meio Ambiente'),
+('Ecologia', 'Estudo das relações ecológicas', '🦋', 'Técnica', 'intermediate', 400, 'Meio Ambiente'),
+('Recursos Hídricos', 'Gestão e conservação da água', '💧', 'Técnica', 'intermediate', 400, 'Meio Ambiente');
+
+-- Inserir módulos para trilhas técnicas de Meio Ambiente
+INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge) VALUES
+-- Gestão Ambiental
+(18, 'Sistemas de Gestão', 'ISO 14001 e certificações', 1, 100, '🥇'),
+(18, 'Auditoria Ambiental', 'Avaliação de conformidade', 2, 100, '🥈'),
+(18, 'Licenciamento Ambiental', 'Processos regulatórios', 3, 100, '🥉'),
+(18, 'Sustentabilidade', 'Desenvolvimento sustentável', 4, 100, '🏆'),
+-- Química Ambiental
+(19, 'Poluentes Químicos', 'Tipos e características', 1, 100, '🥇'),
+(19, 'Tratamento de Efluentes', 'Processos de purificação', 2, 100, '🥈'),
+(19, 'Análise Ambiental', 'Técnicas de monitoramento', 3, 100, '🥉'),
+(19, 'Remediação', 'Recuperação de áreas contaminadas', 4, 100, '🏆'),
+-- Ecologia
+(20, 'Ecossistemas', 'Estrutura e funcionamento', 1, 100, '🥇'),
+(20, 'Biodiversidade', 'Conservação da vida', 2, 100, '🥈'),
+(20, 'Ecologia Urbana', 'Ambiente urbano', 3, 100, '🥉'),
+(20, 'Restauração Ecológica', 'Recuperação de ecossistemas', 4, 100, '🏆'),
+-- Recursos Hídricos
+(21, 'Ciclo Hidrológico', 'Dinâmica da água', 1, 100, '🥇'),
+(21, 'Qualidade da Água', 'Parâmetros e monitoramento', 2, 100, '🥈'),
+(21, 'Tratamento de Água', 'Processos de purificação', 3, 100, '🥉'),
+(21, 'Gestão de Bacias', 'Planejamento hidrológico', 4, 100, '🏆');
+
+-- Inserir trilhas técnicas para Produção Cultural
+INSERT INTO trails (title, description, icon, category, difficulty, total_xp, course) VALUES
+('História da Arte', 'Evolução das expressões artísticas', '🎨', 'Técnica', 'intermediate', 400, 'Produção Cultural'),
+('Teoria da Comunicação', 'Fundamentos da comunicação', '📡', 'Técnica', 'intermediate', 400, 'Produção Cultural'),
+('Produção Audiovisual', 'Criação de conteúdo audiovisual', '🎬', 'Técnica', 'intermediate', 400, 'Produção Cultural'),
+('Gestão Cultural', 'Administração de projetos culturais', '🎭', 'Técnica', 'intermediate', 400, 'Produção Cultural');
+
+-- Inserir módulos para trilhas técnicas de Produção Cultural
+INSERT INTO modules (trail_id, title, description, order_index, xp_reward, badge) VALUES
+-- História da Arte
+(22, 'Arte Antiga', 'Civilizações clássicas', 1, 100, '🥇'),
+(22, 'Arte Medieval', 'Idade Média e Renascimento', 2, 100, '🥈'),
+(22, 'Arte Moderna', 'Movimentos modernos', 3, 100, '🥉'),
+(22, 'Arte Contemporânea', 'Expressões atuais', 4, 100, '🏆'),
+-- Teoria da Comunicação
+(23, 'Comunicação Interpessoal', 'Relações humanas', 1, 100, '🥇'),
+(23, 'Comunicação de Massa', 'Mídia e sociedade', 2, 100, '🥈'),
+(23, 'Comunicação Digital', 'Era da informação', 3, 100, '🥉'),
+(23, 'Comunicação Estratégica', 'Planejamento comunicacional', 4, 100, '🏆'),
+-- Produção Audiovisual
+(24, 'Roteiro', 'Escrita para audiovisual', 1, 100, '🥇'),
+(24, 'Direção', 'Linguagem cinematográfica', 2, 100, '🥈'),
+(24, 'Edição', 'Pós-produção', 3, 100, '🥉'),
+(24, 'Produção Executiva', 'Gestão de projetos', 4, 100, '🏆'),
+-- Gestão Cultural
+(25, 'Políticas Culturais', 'Marco legal e institucional', 1, 100, '🥇'),
+(25, 'Captação de Recursos', 'Financiamento cultural', 2, 100, '🥈'),
+(25, 'Marketing Cultural', 'Promoção e divulgação', 3, 100, '🥉'),
+(25, 'Eventos Culturais', 'Organização e produção', 4, 100, '🏆');
 
 -- Inserir conquistas
 INSERT INTO achievements (title, description, icon, type, requirement_value, xp_reward) VALUES
@@ -289,6 +409,46 @@ INSERT INTO achievements (title, description, icon, type, requirement_value, xp_
 ('Programador Iniciante', 'Complete módulos de programação', '💻', 'special', 1, 75);
 
 -- ============================================================
+-- USUÁRIO DE TESTE PARA SISTEMA DE RECOMPENSAS
+-- ============================================================
+
+-- Inserir usuário de teste com 10.000 pontos
+INSERT INTO users (
+  name, 
+  email, 
+  matricula, 
+  password_hash, 
+  role, 
+  course,
+  bio
+) VALUES (
+  'João Silva Teste',
+  'joao.teste@email.com',
+  '2024001',
+  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- senha: "password"
+  'student',
+  'Mecânica',
+  'Usuário criado para testar o sistema de recompensas'
+);
+
+-- Obter o ID do usuário recém-criado e inserir 10.000 pontos
+SET @test_user_id = LAST_INSERT_ID();
+
+INSERT INTO user_xp (
+  user_id,
+  total_xp,
+  level
+) VALUES (
+  @test_user_id,
+  10000,
+  1
+);
+
+-- Adicionar algumas conquistas para o usuário de teste
+INSERT INTO user_achievements (user_id, achievement_id) 
+SELECT @test_user_id, id FROM achievements LIMIT 5;
+
+-- ============================================================
 -- VERIFICAÇÕES FINAIS
 -- ============================================================
 
@@ -297,5 +457,7 @@ SELECT '📊 Estrutura das tabelas:' AS info;
 SHOW TABLES;
 
 SELECT '👤 Usuário admin criado: admin@trilhas.com (senha: admin123)' AS admin_info;
+SELECT '🧪 Usuário de teste criado: joao.teste@email.com (senha: password) - 10.000 pontos' AS test_user_info;
 SELECT '🎮 Sistema de gamificação ativo com trilhas, módulos e conquistas!' AS gamification_info;
+SELECT '🎁 Sistema de recompensas ativo com tabela reward_requests!' AS rewards_info;
 SELECT '🔗 Relacionamentos configurados entre todas as tabelas!' AS relationships_info;

@@ -37,6 +37,17 @@ export class NotificationService {
     await pool.query(`UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0`, [userId]);
   }
 
+  async markRead(notificationId: number, userId: number): Promise<void> {
+    await pool.query(
+      `UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`,
+      [notificationId, userId]
+    );
+  }
+
+  async deleteAll(userId: number): Promise<void> {
+    await pool.query(`DELETE FROM notifications WHERE user_id = ?`, [userId]);
+  }
+
   async create(userId: number, type: string, title: string, body?: string): Promise<void> {
     await pool.query(
       `INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)`,

@@ -54,13 +54,12 @@ export function TrailProvider({ children }) {
     if (!token) return;
     
     try {
-      const response = await axios.get(`${apiUrl}/trails/stats`, {
+      // Buscar stats de conquistas (XP, level, etc)
+      const response = await axios.get(`${apiUrl}/achievements/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data.success) {
-        setUserStats(response.data.stats);
-      }
+      setUserStats(response.data);
     } catch (error) {
       console.error('❌ Erro ao buscar stats:', error);
     }
@@ -71,13 +70,11 @@ export function TrailProvider({ children }) {
     if (!token) return;
     
     try {
-      const response = await axios.get(`${apiUrl}/trails/achievements`, {
+      const response = await axios.get(`${apiUrl}/achievements/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data.success) {
-        setAchievements(response.data.achievements);
-      }
+      setAchievements(response.data);
     } catch (error) {
       console.error('❌ Erro ao buscar conquistas:', error);
     }

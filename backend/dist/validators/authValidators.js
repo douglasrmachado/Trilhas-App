@@ -27,5 +27,6 @@ exports.createProfessorSchema = zod_1.z.object({
     email: zod_1.z.string().email('Email inválido'),
     registryId: zod_1.z.string().min(1, 'Matrícula é obrigatória'),
     password: zod_1.z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+    course: zod_1.z.enum(['Informática', 'Meio Ambiente', 'Produção Cultural', 'Mecânica']),
 });
 //# sourceMappingURL=authValidators.js.map

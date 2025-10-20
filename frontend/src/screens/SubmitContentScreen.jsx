@@ -30,9 +30,8 @@ export default function SubmitContentScreen({ navigation }) {
     title: '',
     subject: '',
     year: '',
-    contentType: 'Resumo',
+    contentType: 'resumo',
     description: '',
-    keywords: '',
   });
   
   // Estados para dropdowns
@@ -62,15 +61,46 @@ export default function SubmitContentScreen({ navigation }) {
       'Artes', 'Educação Física'
     ];
     
-    // Adicionar trilhas do usuário (técnicas e base)
+    // Matérias técnicas por curso
+    const technicalSubjects = {
+      'Informática': [
+        'Programação', 'Banco de Dados', 'Redes de Computadores', 
+        'Desenvolvimento Web', 'Algoritmos', 'Estrutura de Dados',
+        'Sistemas Operacionais', 'Engenharia de Software'
+      ],
+      'Mecânica': [
+        'Desenho Técnico', 'Resistência dos Materiais', 
+        'Processos de Fabricação', 'Manutenção Industrial',
+        'Termodinâmica', 'Mecânica dos Fluidos', 'Elementos de Máquinas'
+      ],
+      'Meio Ambiente': [
+        'Gestão Ambiental', 'Química Ambiental', 'Ecologia',
+        'Recursos Hídricos', 'Saneamento Ambiental', 'Legislação Ambiental',
+        'Impactos Ambientais', 'Sustentabilidade'
+      ],
+      'Produção Cultural': [
+        'História da Arte', 'Teoria da Comunicação', 'Produção Audiovisual',
+        'Gestão Cultural', 'Políticas Culturais', 'Marketing Cultural',
+        'Eventos Culturais', 'Multimídia'
+      ]
+    };
+    
+    // Adicionar trilhas do usuário (se houver)
     const userTrails = trails?.map(trail => trail.title) || [];
     
-    // Combinar e remover duplicatas
-    const allSubjects = [...new Set([...baseSubjects, ...userTrails])];
+    // Adicionar matérias técnicas do curso do usuário
+    const userCourseSubjects = technicalSubjects[user?.course] || [];
+    
+    // Combinar todas as matérias e remover duplicatas
+    const allSubjects = [...new Set([
+      ...baseSubjects, 
+      ...userCourseSubjects, 
+      ...userTrails
+    ])];
     
     // Ordenar alfabeticamente
     return allSubjects.sort((a, b) => a.localeCompare(b));
-  }, [trails]);
+  }, [trails, user?.course]);
 
   const years = [
     '1º', '2º', '3º', '4º'
@@ -153,9 +183,6 @@ export default function SubmitContentScreen({ navigation }) {
       submissionData.append('year', formData.year);
       submissionData.append('contentType', formData.contentType);
       submissionData.append('description', formData.description);
-      if (formData.keywords) {
-        submissionData.append('keywords', formData.keywords);
-      }
       
       // Adicionar arquivo se houver
       if (selectedFile) {
@@ -260,11 +287,11 @@ export default function SubmitContentScreen({ navigation }) {
       >
         {selectedValue && (
           <Text style={styles.contentTypeIcon}>
-            {options.find(opt => opt.name === selectedValue)?.icon || '📄'}
+            {options.find(opt => opt.id === selectedValue)?.icon || '📄'}
           </Text>
         )}
         <Text style={[styles.dropdownText, { color: theme.textColor }]}>
-          {selectedValue || placeholder}
+          {options.find(opt => opt.id === selectedValue)?.name || placeholder}
         </Text>
         <Text style={[styles.dropdownArrow, { color: theme.textColor }]}>
           {isOpen ? '▲' : '▼'}
@@ -286,7 +313,7 @@ export default function SubmitContentScreen({ navigation }) {
                 key={index}
                 style={styles.dropdownItem}
                 onPress={() => {
-                  onSelect(option.name);
+                  onSelect(option.id);
                   onToggle();
                 }}
               >
@@ -316,8 +343,8 @@ export default function SubmitContentScreen({ navigation }) {
         <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
-          <Text style={styles.headerIcon}>📄✏️</Text>
-          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Submeter Conteúdo</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Submeter</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Conteúdo</Text>
         </View>
         
         <View style={styles.headerRight}>
@@ -465,24 +492,6 @@ export default function SubmitContentScreen({ navigation }) {
                 textAlignVertical="top"
               />
             </View>
-
-            {/* Palavras-chave */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.textColor }]}>
-                Palavras-chave (opcional)
-              </Text>
-              <TextInput
-                style={[styles.textInput, { 
-                  borderColor: theme.borderColor,
-                  backgroundColor: theme.cardBg,
-                  color: theme.textColor 
-                }]}
-                placeholder="Ex: equações, matemática, álgebra"
-                placeholderTextColor={theme.textColor + '66'}
-                value={formData.keywords}
-                onChangeText={(value) => handleInputChange('keywords', value)}
-              />
-            </View>
           </View>
 
           {/* Seção Anexar Arquivo */}
@@ -558,7 +567,6 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 2,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

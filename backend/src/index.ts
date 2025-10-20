@@ -9,6 +9,8 @@ import authRouter from './routes/auth';
 import submissionsRouter from './routes/submissions';
 import notificationsRouter from './routes/notifications';
 import trailsRouter from './routes/trails';
+import achievementsRouter from './routes/achievements';
+import rewardRequestsRouter from './routes/rewardRequests';
 import { errorHandler } from './utils/errorHandler';
 import { config, validateConfig } from './config';
 import { bootstrapDatabase } from './utils/bootstrap';
@@ -66,6 +68,8 @@ app.use('/auth', authRouter);
 app.use('/submissions', submissionsRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/trails', trailsRouter);
+app.use('/achievements', achievementsRouter);
+app.use('/reward-requests', rewardRequestsRouter);
 
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler);

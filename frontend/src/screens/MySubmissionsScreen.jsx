@@ -222,17 +222,13 @@ export default function MySubmissionsScreen({ navigation }) {
         <BackButton onPress={() => navigation.goBack()} />
         
         <View style={styles.headerCenter}>
-          <Text style={styles.headerIcon}>📋</Text>
-          <Text style={[styles.headerTitle, { color: theme.headerText }]}>
-            Minhas Submissões ({submissions.length})
-          </Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Minhas</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Submissões</Text>
         </View>
         
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={onRefresh}>
-            <Text style={styles.refreshIcon}>🔄</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={onRefresh} style={styles.headerRight}>
+          <Text style={styles.refreshIcon}>🔄</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -277,29 +273,29 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    gap: 12,
   },
   headerCenter: {
-    flex: 2,
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 8,
   },
   headerIcon: {
     fontSize: 18,
     marginRight: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    flexShrink: 1,
   },
   headerRight: {
-    flex: 1,
-    alignItems: 'flex-end',
+    padding: 4,
   },
   refreshIcon: {
     fontSize: 20,

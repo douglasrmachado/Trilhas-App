@@ -24,6 +24,7 @@ export default function SubmissionDetailScreen({ navigation, route }) {
   const { colors, isDarkMode } = useTheme();
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
 
@@ -152,16 +153,18 @@ export default function SubmissionDetailScreen({ navigation, route }) {
     }
   };
 
-  const handleFileDownload = async (submissionId, fileName) => {
+  const handleFileDownload = async (submissionId, fileName, title) => {
     try {
-      setLoading(true);
+      setDownloading(true);
       const apiUrl = getApiUrl();
       const downloadUrl = `${apiUrl}/submissions/${submissionId}/download`;
       
-      console.log('📥 Iniciando download:', { submissionId, fileName, downloadUrl });
+      console.log('📥 Iniciando download:', { submissionId, fileName, title, downloadUrl });
       
-      // Criar nome do arquivo local
-      const localFileName = `${fileName}`;
+      // Criar nome do arquivo local usando o título da submissão
+      // Remover caracteres especiais e adicionar extensão .pdf
+      const sanitizedTitle = title.replace(/[<>:"/\\|?*]/g, '_').trim();
+      const localFileName = `${sanitizedTitle}.pdf`;
       const localUri = FileSystem.documentDirectory + localFileName;
       
       // Fazer download do arquivo com autenticação
@@ -202,7 +205,7 @@ export default function SubmissionDetailScreen({ navigation, route }) {
             if (isAvailable) {
               await Sharing.shareAsync(downloadResult.uri, {
                 mimeType: 'application/pdf',
-                dialogTitle: `Visualizar ${fileName}`,
+                dialogTitle: `Visualizar ${localFileName}`,
                 UTI: 'com.adobe.pdf',
               });
             } else {
@@ -233,7 +236,7 @@ export default function SubmissionDetailScreen({ navigation, route }) {
         Alert.alert('Erro', 'Erro ao baixar arquivo. Tente novamente.');
       }
     } finally {
-      setLoading(false);
+      setDownloading(false);
     }
   };
 
@@ -369,24 +372,13 @@ export default function SubmissionDetailScreen({ navigation, route }) {
               </View>
               <View style={styles.fileActions}>
                 <TouchableOpacity
-                  style={[styles.previewButton, { backgroundColor: theme.successGreen }]}
-                  onPress={() => {
-                    navigation.navigate('PDFPreview', {
-                      fileUrl: `${getApiUrl()}/submissions/${submission.id}/preview?token=${token}`,
-                      fileName: submission.file_name,
-                      title: submission.title,
-                      submissionId: submission.id
-                    });
-                  }}
-                >
-                  <Text style={styles.previewIcon}>👁️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
                   style={[styles.downloadButton, { backgroundColor: theme.primaryBlue }]}
-                  onPress={() => handleFileDownload(submission.id, submission.file_name)}
-                  disabled={loading}
+                  onPress={() => handleFileDownload(submission.id, submission.file_name, submission.title)}
+                  disabled={downloading}
                 >
-                  <Text style={styles.downloadIcon}>{loading ? '⏳' : '⬇️'}</Text>
+                  <Text style={styles.downloadText}>
+                    {downloading ? 'Baixando...' : 'Baixar'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -604,25 +596,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  previewButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewIcon: {
-    fontSize: 18,
-  },
   downloadButton: {
-    width: 40,
-    height: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  downloadIcon: {
-    fontSize: 18,
   },
   downloadText: {
     color: '#fff',

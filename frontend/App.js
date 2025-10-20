@@ -23,6 +23,8 @@ import MySubmissionsScreen from './src/screens/MySubmissionsScreen';
 import MySubmissionDetailScreen from './src/screens/MySubmissionDetailScreen';
 import ReviewedSubmissionsScreen from './src/screens/ReviewedSubmissionsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import RedeemRewardScreen from './src/screens/RedeemRewardScreen';
+import RewardRequestsScreen from './src/screens/RewardRequestsScreen';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { Text, View } from 'react-native';
 
@@ -87,6 +89,7 @@ function RootNavigator() {
           <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CampusInfo" component={CampusInfoScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RewardRequests" component={RewardRequestsScreen} options={{ headerShown: false }} />
         </>
       ) : (
         <>
@@ -102,6 +105,7 @@ function RootNavigator() {
           <Stack.Screen name="UserProfile" component={ProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CampusInfo" component={CampusInfoScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RedeemReward" component={RedeemRewardScreen} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>
