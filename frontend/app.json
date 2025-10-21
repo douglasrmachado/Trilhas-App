@@ -40,7 +40,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "API_URL": "http://douglas-trilhas.tecnomaub.site",
+      "API_URL": "https://douglas-trilhas.tecnomaub.site",
       "eas": {
         "projectId": "ca44d0cc-19a7-46f1-a9e5-5026a365503f"
       }
