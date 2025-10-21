@@ -19,7 +19,7 @@ export function TrailProvider({ children }) {
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+  const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://douglas-trilhas.tecnomaub.site/';
 
   // Buscar trilhas
   const fetchTrails = useCallback(async () => {

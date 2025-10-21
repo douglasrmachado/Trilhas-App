@@ -3,13 +3,13 @@ import Constants from 'expo-constants';
 // Configuração da API
 export const API_CONFIG = {
   // Para desenvolvimento local
-  LOCAL: 'http://localhost:3000',
+  LOCAL: 'http://douglas-trilhas.tecnomaub.site/',
   
   // Para desenvolvimento com Expo (use o IP da sua máquina)
   EXPO: 'http://11.1.1.4:3000', // IP da sua máquina
   
   // Para produção
-  PRODUCTION: 'https://sua-api.com',
+  PRODUCTION: 'http://douglas-trilhas.tecnomaub.site/',
 };
 
 // Função para obter a URL correta baseada no ambiente

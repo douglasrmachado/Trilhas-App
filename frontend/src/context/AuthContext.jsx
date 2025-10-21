@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
 
   const updateProfilePhoto = useCallback(async (photoUri) => {
     try {
-      const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+      const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://douglas-trilhas.tecnomaub.site/';
       
       // Atualizar no servidor
       await axios.put(`${apiUrl}/auth/profile-photo`, 
@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = useCallback(async (profileData) => {
     try {
-      const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
+      const apiUrl = Constants?.expoConfig?.extra?.API_URL || 'http://douglas-trilhas.tecnomaub.site/';
       
       // Atualizar no servidor
       await axios.put(`${apiUrl}/auth/profile`, 
