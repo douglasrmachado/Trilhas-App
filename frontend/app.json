@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Trilhas",
+    "slug": "trilhas-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,8 +12,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.douglasrmachado.trilhas"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,13 +28,22 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.douglasrmachado.app"
+      "package": "com.douglasrmachado.trilhas",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "API_URL": "http://11.1.1.4:3000"
+      "API_URL": "http://douglas-trilhas.tecnomaub.site",
+      "eas": {
+        "projectId": "ca44d0cc-19a7-46f1-a9e5-5026a365503f"
+      }
     }
   }
 }

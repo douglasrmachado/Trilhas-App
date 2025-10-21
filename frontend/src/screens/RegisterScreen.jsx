@@ -57,8 +57,13 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Sucesso', 'Cadastro realizado. Faça login.');
       navigation.replace('Login');
     } catch (error) {
+      console.error('❌ Erro ao cadastrar:', error);
+      console.error('📋 Detalhes da resposta:', error?.response?.data);
+      console.error('📊 Status:', error?.response?.status);
+      
       const message = error?.response?.data?.message || 'Erro ao cadastrar';
-      Alert.alert('Erro', message);
+      const details = error?.response?.data?.stack ? `\n\nDetalhes: ${error.response.data.stack}` : '';
+      Alert.alert('Erro ao cadastrar', message + details);
     } finally {
       setLoading(false);
     }

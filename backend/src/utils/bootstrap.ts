@@ -12,6 +12,12 @@ export async function bootstrapDatabase() {
     // Verificar se a coluna 'role' existe
     await ensureRoleColumn();
     
+    // Verificar se a coluna 'course' existe
+    await ensureCourseColumn();
+    
+    // Verificar se colunas de perfil existem
+    await ensureProfileColumns();
+    
     // Criar tabela de submissões
     await ensureSubmissionsTable();
     await ensureSubmissionColumns();
@@ -54,6 +60,66 @@ async function ensureRoleColumn() {
   } catch (err) {
     console.error('❌ Erro ao verificar coluna role:', err);
     throw err;
+  }
+}
+
+/**
+ * Garante que a coluna 'course' existe na tabela users
+ */
+async function ensureCourseColumn() {
+  try {
+    const [colRows] = await pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'course'`
+    );
+    
+    const colCount = Array.isArray(colRows) && colRows[0] && (colRows[0] as any).cnt 
+      ? Number((colRows[0] as any).cnt) 
+      : 0;
+    
+    if (colCount === 0) {
+      await pool.query(
+        "ALTER TABLE users ADD COLUMN course ENUM('Informática','Meio Ambiente','Produção Cultural','Mecânica') NULL AFTER role"
+      );
+      console.log("✅ Coluna 'course' adicionada à tabela users");
+    } else {
+      console.log("✅ Coluna 'course' já existe na tabela users");
+    }
+  } catch (err) {
+    console.error('❌ Erro ao verificar coluna course:', err);
+    throw err;
+  }
+}
+
+/**
+ * Garante que as colunas de perfil existem na tabela users
+ */
+async function ensureProfileColumns() {
+  try {
+    const profileColumns: Array<{ name: string; ddl: string }> = [
+      { name: 'profile_photo', ddl: "ALTER TABLE users ADD COLUMN profile_photo TEXT NULL AFTER course" },
+      { name: 'bio', ddl: "ALTER TABLE users ADD COLUMN bio TEXT NULL AFTER profile_photo" },
+      { name: 'cover_photo', ddl: "ALTER TABLE users ADD COLUMN cover_photo TEXT NULL AFTER bio" },
+    ];
+
+    for (const col of profileColumns) {
+      try {
+        const [rows] = await pool.query(
+          `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+          [col.name]
+        );
+        const cnt = Array.isArray(rows) && rows[0] && (rows[0] as any).cnt ? Number((rows[0] as any).cnt) : 0;
+        if (cnt === 0) {
+          await pool.query(col.ddl);
+          console.log(`✅ Coluna adicionada em users: ${col.name}`);
+        }
+      } catch (err) {
+        console.error(`❌ Erro ao garantir coluna ${col.name} em users:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Erro ao verificar/adicionar colunas de perfil em users:', err);
   }
 }
 

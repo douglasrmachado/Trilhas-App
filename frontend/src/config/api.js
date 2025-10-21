@@ -9,7 +9,7 @@ export const API_CONFIG = {
   EXPO: 'http://11.1.1.4:3000', // IP da sua máquina
   
   // Para produção
-  PRODUCTION: 'http://douglas-trilhas.tecnomaub.site/',
+  PRODUCTION: 'https://douglas-trilhas.tecnomaub.site/',
 };
 
 // Função para obter a URL correta baseada no ambiente
